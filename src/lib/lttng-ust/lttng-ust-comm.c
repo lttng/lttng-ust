@@ -65,15 +65,15 @@
  */
 #define EXPECT_PAYLOAD_SIZE(payload_size, expected_size)		\
 	if (payload_size != expected_size) {				\
-		ERR("payload size `%" PRIu64 "` does not match expected size: %" PRIu64 "\n", \
-			(uint64_t)payload_size, (uint64_t)expected_size); \
+		ERR("payload size `%zu` does not match expected size: %zu\n", \
+			(size_t)payload_size, (size_t)expected_size); \
 	}								\
 	if (payload_size != expected_size)
 
 #define EXPECT_ANCILLARY_SIZE(ancillary_size, expected_size)		\
 	if (ancillary_size != expected_size) {				\
-		ERR("ancillary size `%" PRIu64 "` does not match expected size: %" PRIu64 "\n", \
-			(uint64_t)ancillary_size, (uint64_t)expected_size); \
+		ERR("ancillary size `%zu` does not match expected size: %zu\n", \
+			(size_t)ancillary_size, (size_t)expected_size); \
 	}								\
 	if (ancillary_size != expected_size)
 
@@ -2011,7 +2011,7 @@ flush_message(int sock, const struct ustcomm_ust_msg_header *lum, char *payload_
 	msghdr.msg_control = NULL;
 	msghdr.msg_controllen = lum->ancillary_size;
 
-	len = recvmsg(sock, &msghdr, MSG_TRUNC);
+	len = recvmsg(sock, &msghdr, 0);
 
 	EXPECT_PAYLOAD_SIZE(lum->payload_size, len) {
 		ERR("error while flushing unknown command");
@@ -2062,7 +2062,7 @@ static int read_message_payload_and_ancillary(int sock,
 	msghdr.msg_control = ancillary_buf;
 	msghdr.msg_controllen = ancillary_buf_size;
 
-	size_recv = recvmsg(sock, &msghdr, MSG_TRUNC);
+	size_recv = recvmsg(sock, &msghdr, MSG_CMSG_CLOEXEC);
 
 	if (size_recv != expected_payload_size) {
 		switch (size_recv) {
@@ -2082,6 +2082,8 @@ static int read_message_payload_and_ancillary(int sock,
 	if (expected_ancillary_size) {
 		cmptr = CMSG_FIRSTHDR(&msghdr);
 
+		if (!cmptr)
+			return -EBADMSG;
 		EXPECT_ANCILLARY_SIZE(cmptr->cmsg_len, CMSG_LEN(expected_ancillary_size)) {
 			return -EBADMSG;
 		}
@@ -2340,11 +2342,12 @@ restart:
 		ssize_t len;
 		struct ustcomm_ust_msg_header lum;
 		char payload_buf[LTTNG_UST_COMM_MAX_PAYLOAD_SIZE];
-		union {
-			char buf[LTTNG_UST_COMM_MAX_PAYLOAD_SIZE];
-			struct cmsghdr align;
-		} ancillary_buf;
+		char ancillary_buf[CMSG_SPACE(LTTNG_UST_COMM_MAX_SEND_FDS * sizeof(int))]
+			__attribute__((aligned(__alignof__(struct cmsghdr))));
 		bool known;
+
+		memset(payload_buf, 0, sizeof(payload_buf));
+		memset(ancillary_buf, 0, sizeof(ancillary_buf));
 
 		len = ustcomm_recv_unix_sock(sock, &lum, sizeof(lum));
 		switch (len) {
@@ -2377,8 +2380,8 @@ restart:
 
 			ret = read_message_payload_and_ancillary(sock,
 								lum.payload_size, lum.ancillary_size,
-								payload_buf, LTTNG_ARRAY_SIZE(payload_buf),
-								ancillary_buf.buf, LTTNG_ARRAY_SIZE(ancillary_buf.buf));
+								payload_buf, sizeof(payload_buf),
+								ancillary_buf, sizeof(ancillary_buf));
 			if (ret) {
 				ERR("Error %d while reading message payload for %s socket",
 					-ret,
@@ -2387,7 +2390,7 @@ restart:
 			}
 			ret = handle_message(sock_info, sock, &lum,
 					payload_buf, lum.payload_size,
-					ancillary_buf.buf, lum.ancillary_size);
+					ancillary_buf, lum.ancillary_size);
 			if (ret) {
 				ERR("Error handling message for %s socket",
 					sock_info->name);

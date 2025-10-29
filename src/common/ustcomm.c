@@ -30,8 +30,6 @@
 #include "common/events.h"
 #include "common/compat/pthread.h"
 
-#define USTCOMM_MAX_SEND_FDS	4
-
 static
 ssize_t count_fields_recursive(size_t nr_fields,
 		const struct lttng_ust_event_field * const *lttng_fields);
@@ -361,7 +359,7 @@ ssize_t ustcomm_send_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 	memset(&msg, 0, sizeof(msg));
 	memset(tmp, 0, CMSG_SPACE(sizeof_fds) * sizeof(char));
 
-	if (nb_fd > USTCOMM_MAX_SEND_FDS)
+	if (nb_fd > LTTNG_UST_COMM_MAX_SEND_FDS)
 		return -EINVAL;
 
 	msg.msg_control = (caddr_t)tmp;
@@ -478,12 +476,11 @@ end:
 	return ret;
 }
 
-static int64_t
-prepare_ancillary_data(struct msghdr *msg, const int *fds, int fds_cnt,
-		char *control_buf, size_t control_buf_len)
+static ssize_t
+prepare_ancillary_data(struct msghdr *msg, const int *fds, int fds_cnt, char *control_buf)
 {
+	size_t sizeof_fds = fds_cnt * sizeof(int);
 	struct cmsghdr *cmptr;
-	unsigned int sizeof_fds = fds_cnt * sizeof(int);
 
 	if (!fds) {
 
@@ -496,11 +493,11 @@ prepare_ancillary_data(struct msghdr *msg, const int *fds, int fds_cnt,
 		return 0;
 	}
 
-	if (fds_cnt == 0)
+	if (fds_cnt <= 0 || fds_cnt > LTTNG_UST_COMM_MAX_SEND_FDS)
 		return -EINVAL;
 
 	msg->msg_control = control_buf;
-	msg->msg_controllen = control_buf_len;
+	msg->msg_controllen = CMSG_SPACE(sizeof_fds);
 
 	cmptr = CMSG_FIRSTHDR(msg);
 
@@ -512,7 +509,7 @@ prepare_ancillary_data(struct msghdr *msg, const int *fds, int fds_cnt,
 	return sizeof_fds;
 }
 
-static int64_t
+static ssize_t
 prepare_payload_data(struct msghdr *msg, struct iovec *iov, int iovcnt)
 {
 	size_t total_size = 0;
@@ -543,46 +540,41 @@ int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg_header *lum,
 			const int *fds, size_t fds_cnt)
 {
 	struct msghdr msghdr;
-	ssize_t sent_size;
-	int64_t payload_size, ancillary_size;
-	union {
-		char buf[CMSG_SPACE(USTCOMM_MAX_SEND_FDS * sizeof(int))];
-		struct cmsghdr align;
-	} control_buf = { 0 };
+	ssize_t sent_size, payload_size, ancillary_size;
+	char control_buf[CMSG_SPACE(LTTNG_UST_COMM_MAX_SEND_FDS * sizeof(int))]
+		__attribute__((aligned(__alignof__(struct cmsghdr))));
 
 	/*
 	 * Memset to ensure all bytes of unions are zeroed.
 	 */
 	memset(&msghdr, 0, sizeof(msghdr));
+	memset(control_buf, 0, sizeof(control_buf));
 
 	payload_size = prepare_payload_data(&msghdr, iov, iovcnt);
-
 	if (payload_size < 0) {
-		ERR("error while preparing payload data: %d\n", (int)payload_size);
-		return payload_size;
+		ERR("error while preparing payload data: %zd\n", payload_size);
+		return (int)payload_size;
 	}
-
 	if (payload_size > LTTNG_UST_COMM_MAX_PAYLOAD_SIZE) {
-		ERR("payload data size is too big: %" PRId64, payload_size);
+		ERR("payload data size is too big: %zd\n", payload_size);
 		return -E2BIG;
 	}
 
-	ancillary_size = prepare_ancillary_data(&msghdr, fds, fds_cnt,
-						control_buf.buf, sizeof(control_buf.buf));
+	ancillary_size = prepare_ancillary_data(&msghdr, fds, fds_cnt, control_buf);
 
 	if (ancillary_size < 0) {
-		ERR("error while preparing ancillary data: %d\n", (int)ancillary_size);
-		return ancillary_size;
+		ERR("error while preparing ancillary data: %zd\n", ancillary_size);
+		return (int)ancillary_size;
 	}
 
-	if (payload_size > LTTNG_UST_COMM_MAX_PAYLOAD_SIZE) {
-		ERR("ancillary data size is too big: %" PRId64, ancillary_size);
+	if (ancillary_size > LTTNG_UST_COMM_MAX_PAYLOAD_SIZE) {
+		ERR("ancillary data size is too big: %zd\n", ancillary_size);
 		return -E2BIG;
 	}
 
 	if (ancillary_size > 0) {
 		if (payload_size == 0) {
-			ERR("ancillary size is not null but payload size is");
+			ERR("ancillary size is not null but payload size is zero");
 			return -EINVAL;
 		}
 	}

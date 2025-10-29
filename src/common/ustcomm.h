@@ -50,6 +50,7 @@ struct lttng_ust_session;
  * attribute: 2 MB on most architectures.
  */
 #define LTTNG_UST_COMM_MAX_PAYLOAD_SIZE (1024 * 128)
+#define LTTNG_UST_COMM_MAX_SEND_FDS	4
 
 #define LTTNG_UST_COMM_REG_MSG_SIZE			136
 struct lttng_ust_ctl_reg_msg {
