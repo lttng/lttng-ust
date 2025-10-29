@@ -103,6 +103,8 @@ struct lttng_ust_ctl_daemon_counter {
  */
 #define sigbus_begin() \
 ({ \
+	bool _ret; \
+	\
 	assert(!lttng_ust_sigbus_state.jmp_ready); \
 	if (!lttng_ust_sigbus_state.head.next) { \
 		/* \
@@ -114,11 +116,13 @@ struct lttng_ust_ctl_daemon_counter {
 	if (sigsetjmp(lttng_ust_sigbus_state.sj_env, 1)) { \
 		/* SIGBUS. */ \
 		CMM_STORE_SHARED(lttng_ust_sigbus_state.jmp_ready, 0); \
-		true; \
+		_ret = true; \
+	} else { \
+		cmm_barrier(); \
+		CMM_STORE_SHARED(lttng_ust_sigbus_state.jmp_ready, 1); \
+		_ret = false; \
 	} \
-	cmm_barrier(); \
-	CMM_STORE_SHARED(lttng_ust_sigbus_state.jmp_ready, 1); \
-	false; \
+	_ret; \
 })
 
 static void sigbus_end(void)
