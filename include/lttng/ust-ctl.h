@@ -230,6 +230,8 @@ int lttng_ust_ctl_get_mmap_len(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *len);
 int lttng_ust_ctl_get_max_subbuf_size(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *len);
+int lttng_ust_ctl_stream_get_backend_area(struct lttng_ust_ctl_consumer_stream *stream,
+		void **addr, unsigned long *len);
 
 void lttng_ust_ctl_set_channel_owner_id(struct lttng_ust_abi_object_data *obj,
 					uint32_t id);
