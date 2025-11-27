@@ -2644,6 +2644,16 @@ int lttng_ust_ctl_get_mmap_len(struct lttng_ust_ctl_consumer_stream *stream,
 	return 0;
 }
 
+int lttng_ust_ctl_stream_get_backend_area(struct lttng_ust_ctl_consumer_stream *stream,
+		void **addr, unsigned long *len)
+{
+	if (!stream || !addr || !len)
+		return -EINVAL;
+	*addr = stream->memory_map_addr;
+	*len = (unsigned long) stream->memory_map_size;
+	return 0;
+}
+
 /* returns the maximum size for sub-buffers. */
 int lttng_ust_ctl_get_max_subbuf_size(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *len)
