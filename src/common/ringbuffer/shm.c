@@ -131,27 +131,10 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 	}
 
 	if (preallocate_backing) {
-		do {
-			ret = posix_fallocate(shmfd, 0, memory_map_size);
-		} while (ret == EINTR);
-
+		ret = zero_file(shmfd, memory_map_size);
 		if (ret) {
-			/*
-			 * If posix_fallocate() returns EOPNOTSUPP, it is still
-			 * possible to allocate the space by zeroing the file
-			 * explicitly.
-			 */
-			if (ret == EOPNOTSUPP) {
-				ret = zero_file(shmfd, memory_map_size);
-				if (ret) {
-					PERROR("zero_file");
-					goto error_allocate_backing;
-				}
-			} else {
-				errno = ret;
-				PERROR("posix_fallocate");
-				goto error_allocate_backing;
-			}
+			PERROR("zero_file");
+			goto error_allocate_backing;
 		}
 	}
 
