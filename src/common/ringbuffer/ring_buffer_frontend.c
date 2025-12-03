@@ -330,7 +330,7 @@ void init_crash_abi(const struct lttng_ust_ring_buffer_config *config,
 int lib_ring_buffer_create(struct lttng_ust_ring_buffer *buf,
 			   struct channel_backend *chanb, int cpu,
 			   struct lttng_ust_shm_handle *handle,
-			   struct shm_object *shmobj, bool preallocate)
+			   struct shm_object *shmobj, bool preallocate_backing)
 {
 	const struct lttng_ust_ring_buffer_config *config = &chanb->config;
 	struct lttng_ust_ring_buffer_channel *chan = caa_container_of(chanb,
@@ -360,7 +360,7 @@ int lib_ring_buffer_create(struct lttng_ust_ring_buffer *buf,
 	}
 
 	ret = lib_ring_buffer_backend_create(&buf->backend, &chan->backend,
-			cpu, handle, shmobj, preallocate);
+			cpu, handle, shmobj, preallocate_backing);
 	if (ret) {
 		goto free_commit_cold;
 	}
