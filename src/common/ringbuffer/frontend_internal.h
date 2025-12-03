@@ -344,6 +344,15 @@ void lib_ring_buffer_clear_reader(struct lttng_ust_ring_buffer *buf,
 }
 
 static inline
+void lib_ring_buffer_timestamp_sync(struct lttng_ust_ring_buffer *buf,
+				    struct lttng_ust_shm_handle *handle)
+{
+	if (!uatomic_read(&buf->use_creation_timestamp))
+		return;
+	lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH, handle);
+}
+
+static inline
 int lib_ring_buffer_pending_data(const struct lttng_ust_ring_buffer_config *config,
 				 struct lttng_ust_ring_buffer *buf,
 				 struct lttng_ust_ring_buffer_channel *chan)
