@@ -655,7 +655,7 @@ extern int lib_ring_buffer_create(struct lttng_ust_ring_buffer *buf,
 				  struct channel_backend *chanb, int cpu,
 				  struct lttng_ust_shm_handle *handle,
 				  struct shm_object *shmobj,
-				  bool populate)
+				  bool preallocate_backing)
 	__attribute__((visibility("hidden")));
 
 extern void lib_ring_buffer_free(struct lttng_ust_ring_buffer *buf,

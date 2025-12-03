@@ -39,7 +39,7 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_ring_buffer_config *
 				     int extra_reader_sb,
 				     struct lttng_ust_shm_handle *handle,
 				     struct shm_object *shmobj,
-				     bool preallocate)
+				     bool preallocate_backing)
 {
 	struct channel_backend *chanb;
 	unsigned long subbuf_size, mmap_offset = 0;
@@ -141,8 +141,8 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_ring_buffer_config *
 			pages->mmap_offset = mmap_offset;
 			mmap_offset += subbuf_size;
 		}
-		pages->allocated = preallocate;
-		if (preallocate) {
+		pages->allocated = preallocate_backing;
+		if (preallocate_backing) {
 			pages->timestamp_begin = chanb->start_timestamp;
 			pages->timestamp_end = chanb->start_timestamp;
 		}
@@ -163,7 +163,7 @@ page_size_error:
 int lib_ring_buffer_backend_create(struct lttng_ust_ring_buffer_backend *bufb,
 				   struct channel_backend *chanb, int cpu,
 				   struct lttng_ust_shm_handle *handle,
-				   struct shm_object *shmobj, bool preallocate)
+				   struct shm_object *shmobj, bool preallocate_backing)
 {
 	const struct lttng_ust_ring_buffer_config *config = &chanb->config;
 
@@ -173,7 +173,7 @@ int lib_ring_buffer_backend_create(struct lttng_ust_ring_buffer_backend *bufb,
 	return lib_ring_buffer_backend_allocate(config, bufb, chanb->buf_size,
 						chanb->num_subbuf,
 						chanb->extra_reader_sb,
-						handle, shmobj, preallocate);
+						handle, shmobj, preallocate_backing);
 }
 
 void lib_ring_buffer_backend_reset(struct lttng_ust_ring_buffer_backend *bufb,
@@ -255,8 +255,8 @@ void channel_backend_reset(struct channel_backend *chanb)
  * @num_subbuf: number of sub-buffers (power of 2)
  * @lttng_ust_shm_handle: shared memory handle
  * @stream_fds: stream file descriptors.
- * @preallocate: preallocate the channel buffers if true, otherwise
- *               allocate them on demand.
+ * @preallocate_backing: preallocate the channel buffers if true,
+ *                       otherwise allocate them on demand.
  *
  * Returns channel pointer if successful, %NULL otherwise.
  *

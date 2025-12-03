@@ -29,7 +29,7 @@ int lib_ring_buffer_backend_create(struct lttng_ust_ring_buffer_backend *bufb,
 				   int cpu,
 				   struct lttng_ust_shm_handle *handle,
 				   struct shm_object *shmobj,
-				   bool populate)
+				   bool preallocate_backing)
 	__attribute__((visibility("hidden")));
 
 void channel_backend_unregister_notifiers(struct channel_backend *chanb)
