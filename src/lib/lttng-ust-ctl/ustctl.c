@@ -3200,6 +3200,25 @@ int lttng_ust_ctl_clear_buffer(struct lttng_ust_ctl_consumer_stream *stream)
 	return 0;
 }
 
+int lttng_ust_ctl_timestamp_sync(struct lttng_ust_ctl_consumer_stream *stream)
+{
+	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
+	struct lttng_ust_sigbus_range range;
+
+	assert(stream);
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	lib_ring_buffer_timestamp_sync(buf, consumer_chan->chan->priv->rb_chan->handle);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return 0;
+}
+
 int lttng_ust_ctl_get_timestamp_begin(struct lttng_ust_ctl_consumer_stream *stream,
 		uint64_t *timestamp_begin)
 {
