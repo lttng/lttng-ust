@@ -18,6 +18,7 @@
 #include "lib/lttng-ust/events.h"
 #include "common/msgpack/msgpack.h"
 #include "lttng-bytecode.h"
+#include "common/macros.h"
 #include "common/patient.h"
 
 /*
@@ -248,6 +249,87 @@ end:
 }
 
 static
+int capture_blob(struct lttng_msgpack_writer *writer,
+		struct lttng_interpreter_output *output)
+{
+	int ret;
+	uint64_t chunks_count, chunk_length, bytes_left;
+	const uint8_t *bytes;
+
+	/*
+	 * type: blob
+	 * media-type: MEDIA-TYPE
+	 * total-length: TOTAL-LENGTH
+	 * chunks: [CHUNKS ...]
+	 */
+	ret = lttng_msgpack_begin_map(writer, 4);
+	if (ret)
+		goto end;
+
+	/* 1 */
+	ret = lttng_msgpack_write_str(writer, "type");
+	if (ret)
+		goto end;
+
+	ret = lttng_msgpack_write_str(writer, "blob");
+	if (ret)
+		goto end;
+
+	/* 2 */
+	ret = lttng_msgpack_write_str(writer, "media-type");
+	if (ret)
+		goto end;
+
+	ret = lttng_msgpack_write_str(writer, output->u.blob.media_type ? : "");
+	if (ret)
+		goto end;
+
+	/* 3 */
+	ret = lttng_msgpack_write_str(writer, "total-length");
+	if (ret)
+		goto end;
+
+	ret = lttng_msgpack_write_unsigned_integer(writer, output->u.blob.length);
+	if (ret)
+		goto end;
+
+	/* 4 */
+	ret = lttng_msgpack_write_str(writer, "chunks");
+	if (ret)
+		goto end;
+
+	bytes = output->u.blob.bytes;
+	bytes_left = output->u.blob.length;
+	chunk_length = (1ULL << 32) - 1;
+
+	/*
+	 * Includes the `rest` chunk.
+	 */
+	chunks_count = (output->u.blob.length + (chunk_length - 1)) / chunk_length;
+
+	ret = lttng_msgpack_begin_array(writer, chunks_count);
+	if (ret)
+		goto end;
+
+	for (size_t i = 0; i < chunks_count; ++i) {
+		uint64_t actual_length = min_t(uint64_t, chunk_length, bytes_left);
+		ret = lttng_msgpack_encode_blob(writer, bytes, actual_length);
+		if (ret)
+			goto end;
+		bytes += actual_length;
+		bytes_left -= actual_length;
+	}
+
+	ret = lttng_msgpack_end_array(writer);
+	if (ret)
+		goto end;
+
+	ret = lttng_msgpack_end_map(writer);
+end:
+	return ret;
+}
+
+static
 int notification_init(struct lttng_event_notifier_notification *notif,
 		const struct lttng_ust_event_notifier *event_notifier)
 {
@@ -295,6 +377,9 @@ int notification_append_capture(
 		break;
 	case LTTNG_INTERPRETER_TYPE_SEQUENCE:
 		ret = capture_sequence(writer, output);
+		break;
+	case LTTNG_INTERPRETER_TYPE_BLOB:
+		ret = capture_blob(writer, output);
 		break;
 	case LTTNG_INTERPRETER_TYPE_SIGNED_ENUM:
 	case LTTNG_INTERPRETER_TYPE_UNSIGNED_ENUM:

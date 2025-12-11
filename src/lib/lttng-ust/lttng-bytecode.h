@@ -287,6 +287,7 @@ enum lttng_interpreter_type {
 	LTTNG_INTERPRETER_TYPE_DOUBLE,
 	LTTNG_INTERPRETER_TYPE_STRING,
 	LTTNG_INTERPRETER_TYPE_SEQUENCE,
+	LTTNG_INTERPRETER_TYPE_BLOB,
 };
 
 /*
@@ -312,6 +313,11 @@ struct lttng_interpreter_output {
 			/* Inner type. */
 			const struct lttng_ust_type_common *nested_type;
 		} sequence;
+		struct {
+			const uint8_t *bytes;
+			const char *media_type;
+			unsigned long length;
+		} blob;
 	} u;
 };
 

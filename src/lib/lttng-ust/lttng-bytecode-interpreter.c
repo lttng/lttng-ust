@@ -655,9 +655,6 @@ end:
 }
 
 static
-struct lttng_ust_type_common *lttng_ust_static_blob_char = lttng_ust_type_integer_define(uint8_t, LTTNG_UST_BYTE_ORDER, 16);
-
-static
 int lttng_bytecode_interpret_format_output(struct estack_entry *ax,
 		struct lttng_interpreter_output *output)
 {
@@ -701,37 +698,70 @@ again:
 			/* Retry after loading ptr into stack top. */
 			goto again;
 		case OBJECT_TYPE_SEQUENCE:
-			output->type = LTTNG_INTERPRETER_TYPE_SEQUENCE;
-			output->u.sequence.ptr = *(const char **) (ax->u.ptr.ptr + sizeof(unsigned long));
-			output->u.sequence.nr_elem = *(unsigned long *) ax->u.ptr.ptr;
+		{
+			struct sequence {
+				unsigned long length;
+				const char *base;
+			} __attribute__((packed));
+
+			const struct sequence *sequence = ax->u.ptr.ptr;
+
 			switch (ax->u.ptr.field->type->type) {
 			case lttng_ust_type_sequence:
+				output->type = LTTNG_INTERPRETER_TYPE_SEQUENCE;
+				output->u.sequence.ptr = sequence->base;
+				output->u.sequence.nr_elem = sequence->length;
 				output->u.sequence.nested_type = lttng_ust_get_type_sequence(ax->u.ptr.field->type)->elem_type;
 				break;
 			case lttng_ust_type_variable_length_blob:
-				output->u.sequence.nested_type = lttng_ust_static_blob_char;
+			{
+				const struct lttng_ust_type_variable_length_blob *blob =
+					lttng_ust_get_type_variable_length_blob(ax->u.ptr.field->type);
+				output->type = LTTNG_INTERPRETER_TYPE_BLOB;
+				output->u.blob.bytes = (const uint8_t *)sequence->base;
+				output->u.blob.length = sequence->length;
+				output->u.blob.media_type = blob->media_type;
 				break;
+			}
 			default:
 				return -EINVAL;
 			}
 			break;
+		}
 		case OBJECT_TYPE_ARRAY:
-			/* Skip count (unsigned long) */
-			output->type = LTTNG_INTERPRETER_TYPE_SEQUENCE;
-			output->u.sequence.ptr = *(const char **) (ax->u.ptr.ptr + sizeof(unsigned long));
+		{
+			/*
+			 * `length` is not used since arrays have fixed sizes.
+			 */
+			struct array {
+				unsigned long length;
+				const char *base;
+			} __attribute__((packed));
+
+			const struct array *array = ax->u.ptr.ptr;
+
 			switch (ax->u.ptr.field->type->type) {
 			case lttng_ust_type_array:
+				output->type = LTTNG_INTERPRETER_TYPE_SEQUENCE;
+				output->u.sequence.ptr = array->base;
 				output->u.sequence.nr_elem = lttng_ust_get_type_array(ax->u.ptr.field->type)->length;
 				output->u.sequence.nested_type = lttng_ust_get_type_array(ax->u.ptr.field->type)->elem_type;
 				break;
 			case lttng_ust_type_fixed_length_blob:
-				output->u.sequence.nr_elem = lttng_ust_get_type_fixed_length_blob(ax->u.ptr.field->type)->length;
-				output->u.sequence.nested_type = lttng_ust_static_blob_char;
+			{
+				const struct lttng_ust_type_fixed_length_blob *blob =
+					lttng_ust_get_type_fixed_length_blob(ax->u.ptr.field->type);
+				output->type = LTTNG_INTERPRETER_TYPE_BLOB;
+				output->u.blob.bytes = (const uint8_t *)array->base;
+				output->u.blob.length = blob->length;
+				output->u.blob.media_type = blob->media_type;
 				break;
+			}
 			default:
 				return -EINVAL;
 			}
 			break;
+		}
 		case OBJECT_TYPE_SIGNED_ENUM:
 			ret = dynamic_load_field(ax);
 			if (ret)

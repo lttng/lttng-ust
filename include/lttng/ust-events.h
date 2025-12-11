@@ -217,7 +217,7 @@ struct lttng_ust_type_struct {
 struct lttng_ust_type_fixed_length_blob {
 	struct lttng_ust_type_common parent;
 	uint32_t struct_size;
-	unsigned int length;		/* Num. elems. */
+	unsigned long length;		/* Num. elems. */
 	const char *media_type;		/* Media type, NULL if none. */
 };
 

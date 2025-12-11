@@ -67,6 +67,12 @@ int lttng_msgpack_begin_array(
 int lttng_msgpack_end_array(struct lttng_msgpack_writer *writer)
 	__attribute__((visibility("hidden")));
 
+int lttng_msgpack_encode_blob(
+		struct lttng_msgpack_writer *writer,
+		const uint8_t *bytes,
+		uint64_t count)
+	__attribute__((visibility("hidden")));
+
 int lttng_msgpack_save_writer_pos(struct lttng_msgpack_writer *writer, uint8_t **pos)
 	__attribute__((visibility("hidden")));
 

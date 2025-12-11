@@ -17,6 +17,10 @@
 #define MSGPACK_MAP16_ID	0xDE
 #define MSGPACK_ARRAY16_ID	0xDC
 
+#define MSGPACK_BIN8_ID		0xC4
+#define MSGPACK_BIN16_ID	0xC5
+#define MSGPACK_BIN32_ID	0xC6
+
 #define MSGPACK_UINT8_ID	0xCC
 #define MSGPACK_UINT16_ID	0xCD
 #define MSGPACK_UINT32_ID	0xCE
@@ -348,6 +352,85 @@ int lttng_msgpack_end_array(struct lttng_msgpack_writer *writer)
 	lttng_msgpack_assert(writer->array_nesting > 0);
 	writer->array_nesting--;
 	return 0;
+}
+
+static inline int lttng_msgpack_encode_blob8_header(
+	struct lttng_msgpack_writer *writer, uint8_t count)
+{
+	uint8_t header[] = {
+		MSGPACK_BIN8_ID, count,
+	};
+
+	return lttng_msgpack_append_buffer(writer, header, sizeof(header));
+}
+
+static inline int lttng_msgpack_encode_blob16_header(
+	struct lttng_msgpack_writer *writer, uint16_t count)
+{
+	int ret;
+
+	ret = lttng_msgpack_append_u8(writer, MSGPACK_BIN16_ID);
+	if (ret)
+		goto end;
+
+	ret = lttng_msgpack_append_u16(writer, count);
+end:
+	return ret;
+}
+
+static inline int lttng_msgpack_encode_blob32_header(
+	struct lttng_msgpack_writer *writer,
+	uint32_t count)
+{
+	int ret;
+
+	ret = lttng_msgpack_append_u8(writer, MSGPACK_BIN32_ID);
+	if (ret)
+		goto end;
+
+	ret = lttng_msgpack_append_u32(writer, count);
+end:
+	return ret;
+}
+
+int lttng_msgpack_encode_blob(struct lttng_msgpack_writer *writer,
+			const uint8_t *bytes, uint64_t count)
+{
+	int ret;
+
+	/* msgpack can only encode binary blob up to 2^32 - 1 bytes. */
+	if (count >= (1ULL << 32)) {
+		ret = -1;
+		goto end;
+	}
+
+	/*
+	 * Depending on the size of the binary blob, the header can be encoded
+	 * differently with either:
+	 *
+	 *  - One byte length: [0-256) bytes
+	 *  - Two bytes length: [0-65536) bytes
+	 *  - Four bytes length: [0-4294967296) bytes
+	 *
+	 *  The header is simply an ID that select the length encoding followed
+	 *  by the length and the blob of data:
+	 *
+	 *    ID LENGTH BLOB ...
+	 */
+	if (count < (1 << 8))
+		ret = lttng_msgpack_encode_blob8_header(writer, count);
+	else if (count < (1 << 16))
+		ret = lttng_msgpack_encode_blob16_header(writer, count);
+	else
+		ret = lttng_msgpack_encode_blob32_header(writer, count);
+
+	if (ret)
+		goto end;
+
+	/* Cast is safe because count is guaranteed to be less than 2^32. */
+	ret = lttng_msgpack_append_buffer(writer, bytes, (size_t) count);
+end:
+	return ret;
 }
 
 int lttng_msgpack_write_str(struct lttng_msgpack_writer *writer,
