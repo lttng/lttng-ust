@@ -2122,7 +2122,7 @@ int do_fixup_stalled_subbuf_as_owner(const struct lttng_ust_ring_buffer_config *
 							fill_reserve,
 							handle, ctx->priv);
 			if (err) {
-				lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE, handle);
+				lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE, NULL, handle);
 				return -1;
 			}
 
@@ -2955,14 +2955,16 @@ int lttng_ust_ctl_put_subbuf(struct lttng_ust_ctl_consumer_stream *stream)
 static
 void _lttng_ust_ctl_flush_buffer(struct lttng_ust_ring_buffer *buf,
 		int producer_active,
+		unsigned long *old_pos,
 		struct lttng_ust_ctl_consumer_channel *consumer_chan)
 {
 	lib_ring_buffer_switch_slow(buf, producer_active ? SWITCH_ACTIVE : SWITCH_FLUSH,
-		consumer_chan->chan->priv->rb_chan->handle);
+				old_pos, consumer_chan->chan->priv->rb_chan->handle);
 }
 
-int lttng_ust_ctl_flush_buffer(struct lttng_ust_ctl_consumer_stream *stream,
-		int producer_active)
+int lttng_ust_ctl_flush_buffer_with_old_position(struct lttng_ust_ctl_consumer_stream *stream,
+			int producer_active,
+			unsigned long *old_pos)
 {
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
@@ -2975,10 +2977,16 @@ int lttng_ust_ctl_flush_buffer(struct lttng_ust_ctl_consumer_stream *stream,
 		return -EIO;
 	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
 				stream->memory_map_size);
-	_lttng_ust_ctl_flush_buffer(buf, producer_active, consumer_chan);
+	_lttng_ust_ctl_flush_buffer(buf, producer_active, old_pos, consumer_chan);
 	lttng_ust_sigbus_del_range(&range);
 	sigbus_end();
 	return 0;
+}
+
+int lttng_ust_ctl_flush_buffer(struct lttng_ust_ctl_consumer_stream *stream,
+			int producer_active)
+{
+	return lttng_ust_ctl_flush_buffer_with_old_position(stream, producer_active, NULL);
 }
 
 static
@@ -3075,7 +3083,7 @@ int _lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer
 	if (ret < 0)
 		return ret;
 
-	_lttng_ust_ctl_flush_buffer(buf, 1, stream->chan);
+	_lttng_ust_ctl_flush_buffer(buf, 1, NULL, stream->chan);
 	if (flush_done)
 		*flush_done = true;
 
@@ -3192,8 +3200,8 @@ int lttng_ust_ctl_clear_buffer(struct lttng_ust_ctl_consumer_stream *stream)
 		return -EIO;
 	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
 				stream->memory_map_size);
-	lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
-		consumer_chan->chan->priv->rb_chan->handle);
+	lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE, NULL,
+				consumer_chan->chan->priv->rb_chan->handle);
 	lib_ring_buffer_clear_reader(buf, consumer_chan->chan->priv->rb_chan->handle);
 	lttng_ust_sigbus_del_range(&range);
 	sigbus_end();
