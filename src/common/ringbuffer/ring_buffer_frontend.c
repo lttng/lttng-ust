@@ -201,8 +201,7 @@ void lib_ring_buffer_reset(struct lttng_ust_ring_buffer *buf,
 	uatomic_set(&buf->consumed, 0);
 	uatomic_set(&buf->record_disabled, 0);
 	uatomic_set(&buf->use_creation_timestamp, 1);
-	v_set(config, &buf->last_timestamp, 0);
-	v_set(config, &buf->u.last_activity_timestamp, 0);
+	save_last_timestamp(config, chan, buf, chan->backend.start_timestamp);
 	lib_ring_buffer_backend_reset(&buf->backend, handle);
 	/* Don't reset number of active readers */
 	v_set(config, &buf->records_lost_full, 0);
@@ -371,6 +370,7 @@ int lib_ring_buffer_create(struct lttng_ust_ring_buffer *buf,
 	 */
 	v_set(config, &buf->offset, 0);
 	uatomic_set(&buf->use_creation_timestamp, 1);
+	save_last_timestamp(config, chan, buf, chanb->start_timestamp);
 
 	if (config->cb.buffer_create) {
 		ret = config->cb.buffer_create(buf, priv, cpu, chanb->name, handle);
