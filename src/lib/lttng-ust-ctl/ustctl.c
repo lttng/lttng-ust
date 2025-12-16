@@ -3437,7 +3437,10 @@ int lttng_ust_ctl_timestamp_add(struct lttng_ust_ctl_consumer_stream *stream,
 		delta *= freq;
 		delta /= 1000000000ULL;
 	}
-	*ts += delta;
+	if (delta < 0 && -delta > *ts)
+		*ts = 0;
+	else
+		*ts += delta;
 	return 0;
 }
 
