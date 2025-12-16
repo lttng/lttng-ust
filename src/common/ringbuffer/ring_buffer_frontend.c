@@ -422,7 +422,7 @@ void lib_ring_buffer_channel_switch_timer(int sig __attribute__((unused)),
 				goto end;
 			if (uatomic_read(&buf->active_readers))
 				lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
-					chan->handle);
+							NULL, chan->handle);
 		}
 	} else {
 		struct lttng_ust_ring_buffer *buf =
@@ -432,7 +432,7 @@ void lib_ring_buffer_channel_switch_timer(int sig __attribute__((unused)),
 			goto end;
 		if (uatomic_read(&buf->active_readers))
 			lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
-				chan->handle);
+						NULL, chan->handle);
 	}
 end:
 	pthread_mutex_unlock(&wakeup_fd_mutex);
@@ -2066,6 +2066,7 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
 				    struct lttng_ust_ring_buffer *buf,
 				    struct lttng_ust_ring_buffer_channel *chan,
 				    struct switch_offsets *offsets,
+				    unsigned long *old_pos,
 				    struct lttng_ust_ring_buffer_ctx *ctx,
 				    struct lttng_ust_shm_handle *handle)
 {
@@ -2074,6 +2075,8 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
 
 	offsets->begin = v_read(config, &buf->offset);
 	offsets->old = offsets->begin;
+	if (old_pos)
+		*old_pos = offsets->old;
 	offsets->switch_old_start = 0;
 	off = subbuf_offset(offsets->begin, chan);
 
@@ -2189,7 +2192,7 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
  * from any CPU.
  */
 void lib_ring_buffer_switch_slow(struct lttng_ust_ring_buffer *buf, enum switch_mode mode,
-				 struct lttng_ust_shm_handle *handle)
+				 unsigned long *old_pos, struct lttng_ust_shm_handle *handle)
 {
 	struct lttng_ust_ring_buffer_channel *chan;
 	const struct lttng_ust_ring_buffer_config *config;
@@ -2210,7 +2213,7 @@ void lib_ring_buffer_switch_slow(struct lttng_ust_ring_buffer *buf, enum switch_
 	 */
 	do {
 		if (lib_ring_buffer_try_switch_slow(mode, buf, chan, &offsets,
-						    &ctx, handle))
+						    old_pos, &ctx, handle))
 			return;	/* Switch not needed */
 	} while (v_cmpxchg(config, &buf->offset, offsets.old, offsets.end)
 		 != offsets.old);
@@ -2504,7 +2507,7 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_ring_buffer_ctx *ctx,
 						config, chan, buf,
 						subbuf_index(offsets.end - 1, chan),
 						handle))) {
-			lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH, handle);
+			lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH, NULL, handle);
 			continue;
 		}
 

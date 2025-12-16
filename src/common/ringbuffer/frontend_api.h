@@ -273,7 +273,7 @@ void lib_ring_buffer_switch(
 		struct lttng_ust_ring_buffer *buf, enum switch_mode mode,
 		struct lttng_ust_shm_handle *handle)
 {
-	lib_ring_buffer_switch_slow(buf, mode, handle);
+	lib_ring_buffer_switch_slow(buf, mode, NULL, handle);
 }
 
 /* See ring_buffer_frontend_api.h for lib_ring_buffer_reserve(). */

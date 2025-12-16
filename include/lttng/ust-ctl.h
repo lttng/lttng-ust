@@ -401,7 +401,9 @@ int lttng_ust_ctl_get_subbuf(struct lttng_ust_ctl_consumer_stream *stream,
 int lttng_ust_ctl_put_subbuf(struct lttng_ust_ctl_consumer_stream *stream);
 
 int lttng_ust_ctl_flush_buffer(struct lttng_ust_ctl_consumer_stream *stream,
-		int producer_active);
+			int producer_active);
+int lttng_ust_ctl_flush_buffer_with_old_position(struct lttng_ust_ctl_consumer_stream *stream,
+			int producer_active, unsigned long *old_pos);
 /*
  * Perform an active flush, populating a packet if there was not packet
  * delivery performed during the flush so readers can be able to infer the lack

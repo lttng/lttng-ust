@@ -247,6 +247,7 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_ring_buffer_ctx *ctx,
 extern
 void lib_ring_buffer_switch_slow(struct lttng_ust_ring_buffer *buf,
 				 enum switch_mode mode,
+				 unsigned long *old_pos,
 				 struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
@@ -349,7 +350,7 @@ void lib_ring_buffer_timestamp_sync(struct lttng_ust_ring_buffer *buf,
 {
 	if (!uatomic_read(&buf->use_creation_timestamp))
 		return;
-	lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH, handle);
+	lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH, NULL, handle);
 }
 
 static inline
