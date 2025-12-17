@@ -102,7 +102,7 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_ring_buffer_config *
 		sb = shmp_index(handle, bufb->buf_wsb, i);
 		if (!sb)
 			goto free_array;
-		sb->id = subbuffer_id(config, ~0UL, 1, i);
+		sb->id = subbuffer_id(config, ~0UL >> chanb->buf_size_order, 1, i);
 	}
 
 	/* Assign read-side subbuffer table */
