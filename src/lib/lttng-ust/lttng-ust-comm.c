@@ -64,18 +64,18 @@
  * Becareful with side-effects and these macros.
  */
 #define EXPECT_PAYLOAD_SIZE(payload_size, expected_size)		\
-	if (payload_size != expected_size) {				\
+	if ((payload_size) != (expected_size)) {			\
 		ERR("payload size `%zu` does not match expected size: %zu\n", \
-			(size_t)payload_size, (size_t)expected_size); \
+			(size_t)(payload_size), (size_t)(expected_size)); \
 	}								\
-	if (payload_size != expected_size)
+	if ((payload_size) != (expected_size))
 
 #define EXPECT_ANCILLARY_SIZE(ancillary_size, expected_size)		\
-	if (ancillary_size != expected_size) {				\
+	if ((ancillary_size) != (expected_size)) {			\
 		ERR("ancillary size `%zu` does not match expected size: %zu\n", \
-			(size_t)ancillary_size, (size_t)expected_size); \
+			(size_t)(ancillary_size), (size_t)(expected_size)); \
 	}								\
-	if (ancillary_size != expected_size)
+	if ((ancillary_size) != (expected_size))
 
 /*
  * Has lttng ust comm constructor been called ?
