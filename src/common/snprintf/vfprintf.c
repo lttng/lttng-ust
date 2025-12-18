@@ -245,8 +245,8 @@ int ust_safe_vfprintf(LTTNG_UST_LFILE *fp, const char *fmt0, va_list ap)
 	static char zeroes[PADSIZE] =
 	 {'0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0'};
 
-	static const char xdigs_lower[16] = "0123456789abcdef";
-	static const char xdigs_upper[16] = "0123456789ABCDEF";
+	static const char xdigs_lower[16] __attribute__((__nonstring__)) = "0123456789abcdef";
+	static const char xdigs_upper[16] __attribute__((__nonstring__)) = "0123456789ABCDEF";
 
 	/*
 	 * BEWARE, these `goto error' on error, and PAD uses `n'.
