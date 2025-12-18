@@ -11,8 +11,8 @@ m4_define([ust_version_minor], [15])
 m4_define([ust_version_patch], [0])
 m4_define([ust_version_dev_stage], [-pre])
 m4_define([ust_version], ust_version_major[.]ust_version_minor[.]ust_version_patch[]ust_version_dev_stage)
-m4_define([ust_version_name], [[P-Beer]])
-m4_define([ust_version_description], [[An alcoholic drink made from yeast-fermented malt flavored with hops.]])
+m4_define([ust_version_name], [[Péché Mortel]])
+m4_define([ust_version_description], [[This release is named after Péché Mortel, the iconic Imperial Stout from Montréal’s Dieu du Ciel! and a long-time team favorite. Deep black and unapologetically intense, Péché Mortel pours with a dense, mocha-tinted head and an aroma that immediately announces freshly roasted coffee. Decadent and dangerously drinkable, it is the ideal companion for long, cold winter evenings.]])
 
 # Library version information of "liblttng-ust"
 # Following the numbering scheme proposed by libtool for the library version
