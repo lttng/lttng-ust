@@ -563,7 +563,8 @@ extern void lib_ring_buffer_lazy_padding_as_owner_slow(const struct lttng_ust_ri
 						unsigned long subbuf_idx,
 						struct lttng_ust_shm_handle *handle,
 						const struct lttng_ust_ring_buffer_ctx *ctx,
-						unsigned long hot);
+						unsigned long hot)
+	__attribute__((visibility("hidden")));
 
 static inline
 void lib_ring_buffer_lazy_padding_as_owner(const struct lttng_ust_ring_buffer_config *config,
