@@ -2,6 +2,132 @@
 #
 # SPDX-License-Identifier: CC-BY-4.0
 
+2025-12-19 lttng-ust 2.15.0-rc1
+	* Add the 2.15 "Péché Mortel" beer description
+	* Fix: Add hidden attribute to lib_ring_buffer_lazy_padding_as_owner_slow
+	* Fix: incorrect subbuffer ID initialization
+	* Fix: Add missing parentheses around expected size macro arguments
+	* Introduce lttng_ust_ctl_flush_buffer_with_old_position: Return old position on buffer flush
+	* lttng_ust_ctl_timestamp_add: clamp timestamp value to 0
+	* Fix: initialize last_timestamp to creation time on buffer init/reset
+	* Introduce lttng_ust_ctl_timestamp_sync
+	* Cleanup: Use "preallocate_backing" consistently
+	* ustctl: Introduce lttng_ust_ctl_stream_get_backend_area
+	* Fix: ensure ring-buffer pages are resident when preallocating
+	* Update .gitreview for stable-2.15
+	* ring-buffer: replace fallocate() with posix_fallocate()
+	* fix: MADV_REMOVE is linux specific
+	* Fix: ustctl: sigbus handling: statement with no effect
+	* Fix: Ancillary data protocol fixes
+	* Fix: ustctl: Null pointer dereferences
+	* Cleanup: lttng_ust_abi_event_exclusion ends with 0-len array
+	* Fix: ustctl experimental counters
+	* ustctl: Zero initialize every message
+	* ustctl: Zero initialize context name buffer
+	* Fix: Add missing error handling in lttng_ust_ctl_create_event
+	* ustctl: Zero initialize payload allocated on stack
+	* ustctl: Fix buffer lifetime passed to io vector
+	* Document UST communication protocol version handling
+	* lttng-ust-ctl refactor: Replace assertions by error handling
+	* lttng-ust-ctl refactor: Introduce "unknown command" for testing
+	* lttng-ust-ctl refactor: Unknown commands handling
+	* lttng-ust-ctl refactor: Split union of structures into sub-commands
+	* lttng-ust-ctl refactor: Use length fields when receiving commands
+	* lttng-ust-ctl refactor: Introduce payload and ancillary size header fields
+	* Refactor the LTTng-UST communication protocol
+	* Revert "Refactor the LTTng-UST communication protocol"
+	* Revert "lttng-ust-ctl refactor: Introduce payload and ancillary size header fields"
+	* Revert "lttng-ust-ctl refactor: Use length fields when receiving commands"
+	* Revert "lttng-ust-ctl refactor: Split union of structures into sub-commands"
+	* Revert "lttng-ust-ctl refactor: Unknown commands handling"
+	* Revert "lttng-ust-ctl refactor: Introduce "unknown command" for testing"
+	* Revert "lttng-ust-ctl refactor: Replace assertions by error handling"
+	* Revert "Document UST communication protocol version handling"
+	* Revert "ustctl: Fix buffer lifetime passed to io vector"
+	* Revert "ustctl: Zero initialize payload allocated on stack"
+	* Revert "Fix: Add missing error handling in lttng_ust_ctl_create_event"
+	* Revert "ustctl: Zero initialize context name buffer"
+	* Revert "ustctl: Zero initialize every message"
+	* Revert "Fix: ustctl experimental counters"
+	* Revert "Cleanup: lttng_ust_abi_event_exclusion ends with 0-len array"
+	* Cleanup: lttng_ust_abi_event_exclusion ends with 0-len array
+	* Fix: ustctl experimental counters
+	* ustctl: Zero initialize every message
+	* ustctl: Zero initialize context name buffer
+	* Fix: Add missing error handling in lttng_ust_ctl_create_event
+	* ustctl: Zero initialize payload allocated on stack
+	* ustctl: Fix buffer lifetime passed to io vector
+	* Document UST communication protocol version handling
+	* lttng-ust-ctl refactor: Replace assertions by error handling
+	* lttng-ust-ctl refactor: Introduce "unknown command" for testing
+	* lttng-ust-ctl refactor: Unknown commands handling
+	* lttng-ust-ctl refactor: Split union of structures into sub-commands
+	* lttng-ust-ctl refactor: Use length fields when receiving commands
+	* lttng-ust-ctl refactor: Introduce payload and ancillary size header fields
+	* Refactor the LTTng-UST communication protocol
+	* ringbuffer: Use seq-cst MO for ownership store and offset load
+	* testpoint: Add dot '.' symbol before numeric suffix
+	* testpoint: Ensure unique testpoint labels
+	* ustctl: Fix warning of events discared polling
+	* ustctl: Fix stalled fixup diff arithmetics
+	* Remove ust-abi-old.h following protocol major version bump
+	* lib_ring_buffer_check_deliver_slow: Use store-release from liburcu 0.15
+	* lib_ring_buffer_release_subbuf_ownership: Use store-release from liburcu 0.15
+	* lib_ring_buffer_commit: Use liburcu 0.15 store-release
+	* vatomic: Introduce v_store with memory ordering parameter
+	* Bump liburcu dependency to >= 0.15
+	* lttng_ust_ctl_flush_events_or_populate_packet: fix clobbered variable warning
+	* Use LTTNG_UST_ABI_PROCNAME_LEN rather than LTTNG_UST_CONTEXT_PROCNAME_LEN
+	* Move lttng_ust_abi_channel_config to ust-abi.h, cleanup layout
+	* Fix integer overflows identified by Coverity
+	* Fix: ustctl: memory leak in lttng_ust_ctl_subbuf_iter_create()
+	* Don't produce an initial packet header on ring-buffer creation
+	* Fix: subtract subbuf_size from cc_cold in subbuf iterator
+	* Fix: initialize sub-buffers's id to a pre-roll loop
+	* Fix: off-by-one error in ring buffer noref offset calculation
+	* subbuf_iter: Report the sub-buffer's allocated state instead of populated
+	* ring-buffer: support optional lazy allocation of backing storage
+	* ustctl: Refactor poll_state into subbuf_iter
+	* ustctl: Introduce lib_ring_buffer_reclaim_reader_subbuf
+	* ustctl/ring buffer: Introduce lttng_ust_ctl_get_subbuf_state
+	* ring buffer: Introduce populated backend_pages field
+	* ring buffer: Initialize timestamp begin/end for MAP_POPULATE buffers
+	* ring buffer: Implement lttng_ust_ctl_try_exchange_subbuf
+	* ustctl: Introduce lttng_ust_ctl_get_subbuf_timestamp_range
+	* ring buffer: Add timestamp_begin field to backend_pages
+	* ring buffer: move ts_end to backend_pages
+	* Bump LTTng crash ABI major to 1
+	* ring buffer: allocate extra subbuffer for discard mode
+	* Move end_events_discarded to backend_pages
+	* ust-ctl: Introduce lttng_ust_ctl_timestamp_add helper
+	* ring buffer: Implement last activity timestamp comparison
+	* Refactor get_count_order
+	* Fix: Compare consumed/produced position difference in stalled stream fixup
+	* Fix: Populate events losts on fast path for lazy padding
+	* Fix: Move begin_events_discarded to backend_pages
+	* ust-ctl: Implement stalled buffers fixup
+	* ust-ctl: Add sub-buffer state polling
+	* ring-buffer: Use lazy-padding
+	* ring-buffer: Implement lazy-padding
+	* ring-buffer: Speed up pushing reader consumed position ahead
+	* ring-buffer: Implement packet count as sequence-counters
+	* ring-buffer: Make buffer_wakeup usable outside of frontend
+	* ring-buffer: Add discarded events at packet header beginning
+	* ABI: Add owner field to sub-buffer commit hot struct
+	* ABI: Bump major version to 11
+	* common/testpoint: Introduce TESTPOINT macro
+	* Fix: Sample current `events_discarded` for populating packet
+	* Add `current_events_discarded` callback
+	* Fix: Set events_discarded on terminal packets
+	* Fix: Sample discarded packet counters per sub-buffer
+	* fix: m4: ensure newline after the no-op command
+	* Move ust-fd.h to public headers
+	* lttng-ust(3): `cpu_id` is now addable with a per-channel policy
+	* Only compile trace hit counter code with experimental define
+	* Hide experimental counter symbols
+	* Fix: missing parenthesis in configure.ac
+	* Set version to 2.15.0-pre
+
 2025-04-16 (National Wear Your Pajamas to Work Day) lttng-ust 2.14.0-rc1
 	* Fix release description
 	* Set the 2.14 release codename and description
