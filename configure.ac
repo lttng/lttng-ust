@@ -7,11 +7,11 @@ dnl Process this file with autoconf to produce a configure script.
 
 # Project version information
 m4_define([ust_version_major], [2])
-m4_define([ust_version_minor], [15])
+m4_define([ust_version_minor], [16])
 m4_define([ust_version_patch], [0])
 m4_define([ust_version_dev_stage], [-pre])
 m4_define([ust_version], ust_version_major[.]ust_version_minor[.]ust_version_patch[]ust_version_dev_stage)
-m4_define([ust_version_name], [[P-Beer]])
+m4_define([ust_version_name], [[Q-Beer]])
 m4_define([ust_version_description], [[An alcoholic drink made from yeast-fermented malt flavored with hops.]])
 
 # Library version information of "liblttng-ust"
