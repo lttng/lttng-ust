@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: CC-BY-4.0
 
+2026-02-13 lttng-ust 2.15.0
+	* (no change)
+
 2025-12-19 lttng-ust 2.15.0-rc1
 	* Add the 2.15 "Péché Mortel" beer description
 	* Fix: Add hidden attribute to lib_ring_buffer_lazy_padding_as_owner_slow
