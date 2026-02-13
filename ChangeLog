@@ -1,3 +1,6 @@
+2026-02-13 lttng-ust 2.13.10
+	* Fix: ustctl: sigbus handling: statement with no effect
+
 2025-04-14 (National Gardening Day) lttng-ust 2.13.9
 	* Fix: Use UATOMIC_HAS_ATOMIC_{BYTE,SHORT} for counter atomics
 	* Fix: lttng-ust-tp regex warnings
