@@ -2,6 +2,10 @@
 #
 # SPDX-License-Identifier: CC-BY-4.0
 
+2026-02-13 lttng-ust 2.14.1
+	* Update .gitreview for stable-2.14
+	* Fix: ustctl: sigbus handling: statement with no effect
+
 2025-06-27 lttng-ust 2.14.0
 	* Fix: Sample current `events_discarded` for populating packet
 	* Add `current_events_discarded` callback
