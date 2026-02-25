@@ -170,12 +170,16 @@ int lttng_ust_ctl_release_handle(int sock, int handle)
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 
 	if (sock < 0 || handle < 0)
 		return 0;
 	lum.handle = handle;
 	lum.cmd = LTTNG_UST_ABI_RELEASE;
-	return ustcomm_send_app_cmd(sock, &lum, &lur);
+	return ustcomm_send_app_cmd(&usock, &lum, &lur);
 }
 
 /*
@@ -263,12 +267,16 @@ int lttng_ust_ctl_register_done(int sock)
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	DBG("Sending register done command to %d", sock);
 	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.cmd = LTTNG_UST_ABI_REGISTER_DONE;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_cmd(&usock, &lum, &lur);
 	if (ret)
 		return ret;
 	return 0;
@@ -281,12 +289,16 @@ int lttng_ust_ctl_create_session(int sock)
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret, session_handle;
 
 	/* Create session */
 	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.cmd = LTTNG_UST_ABI_SESSION;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_cmd(&usock, &lum, &lur);
 	if (ret)
 		return ret;
 	session_handle = lur.header.ret_val;
@@ -306,6 +318,10 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 			.iov_base = &ev_copy,
 			.iov_len = sizeof(ev_copy),
 		},
+	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
 	};
 	int ret;
 	struct lttng_ust_abi_object_data *event_data;
@@ -327,7 +343,7 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 	lum.handle = channel_data->header.handle;
 	lum.cmd = LTTNG_UST_ABI_EVENT;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				NULL, 0);
 	if (ret < 0) {
@@ -335,7 +351,7 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 		return ret;
 	}
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 	if (ret < 0) {
 		free(event_data);
 		return ret;
@@ -371,6 +387,10 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 			.iov_base = buf,
 			.iov_len = 0,
 		},
+	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
 	};
 	int ret;
 	struct lttng_ust_abi_object_data *context_data = NULL;
@@ -425,20 +445,20 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 	default:
 		break;
 	}
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				NULL, 0);
 	if (ret < 0)
 		goto end;
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 	if (ret < 0) {
 		if (ret == -EINVAL) {
 			/*
 			 * Command unknown from remote end. The communication socket is
 			 * now out-of-sync and needs to be shutdown.
 			 */
-			(void) ustcomm_shutdown_unix_sock(sock);
+			(void) ustcomm_shutdown_unix_sock(&usock);
 		}
 		goto end;
 	}
@@ -475,6 +495,10 @@ int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *byt
 			.iov_len = bytecode->len,
 		}
 	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	if (!obj_data)
@@ -487,19 +511,19 @@ int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *byt
 	filter.reloc_offset = bytecode->reloc_offset;
 	filter.seqnum = bytecode->seqnum;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				NULL, 0);
 	if (ret < 0)
 		return ret;
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 	if (ret == -EINVAL) {
 		/*
 		 * Command unknown from remote end. The communication socket is
 		 * now out-of-sync and needs to be shutdown.
 		 */
-		(void) ustcomm_shutdown_unix_sock(sock);
+		(void) ustcomm_shutdown_unix_sock(&usock);
 	}
 	return ret;
 }
@@ -527,6 +551,10 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
 			.iov_len = bytecode->len,
 		},
 	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	if (!obj_data)
@@ -539,7 +567,7 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
 	lum.handle = obj_data->header.handle;
 	lum.cmd = LTTNG_UST_ABI_CAPTURE;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				NULL, 0);
 
@@ -547,7 +575,7 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
 		return ret;
 	}
 
-	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	return ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 }
 
 /*
@@ -572,6 +600,10 @@ int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *
 			.iov_len = exclusion->count * LTTNG_UST_ABI_SYM_NAME_LEN,
 		},
 	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	if (!obj_data) {
@@ -581,20 +613,20 @@ int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *
 	lum.handle = obj_data->header.handle;
 	lum.cmd = LTTNG_UST_ABI_EXCLUSION;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				NULL, 0);
 	if (ret< 0) {
 		return ret;
 	}
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 	if (ret == -EINVAL) {
 		/*
 		 * Command unknown from remote end. The communication socket is
 		 * now out-of-sync and needs to be shutdown.
 		 */
-		(void) ustcomm_shutdown_unix_sock(sock);
+		(void) ustcomm_shutdown_unix_sock(&usock);
 	}
 	return ret;
 }
@@ -604,6 +636,10 @@ int lttng_ust_ctl_enable(int sock, struct lttng_ust_abi_object_data *object)
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	if (!object)
@@ -611,7 +647,7 @@ int lttng_ust_ctl_enable(int sock, struct lttng_ust_abi_object_data *object)
 
 	lum.handle = object->header.handle;
 	lum.cmd = LTTNG_UST_ABI_ENABLE;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_cmd(&usock, &lum, &lur);
 	if (ret)
 		return ret;
 	DBG("enabled handle %u", object->header.handle);
@@ -623,6 +659,10 @@ int lttng_ust_ctl_disable(int sock, struct lttng_ust_abi_object_data *object)
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	if (!object)
@@ -630,7 +670,7 @@ int lttng_ust_ctl_disable(int sock, struct lttng_ust_abi_object_data *object)
 
 	lum.handle = object->header.handle;
 	lum.cmd = LTTNG_UST_ABI_DISABLE;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_cmd(&usock, &lum, &lur);
 	if (ret)
 		return ret;
 	DBG("disable handle %u", object->header.handle);
@@ -672,6 +712,10 @@ int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 			.iov_len = sizeof(dummy),
 		}
 	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 	struct lttng_ust_abi_object_data *event_notifier_group_data;
 	int fds[] = {
@@ -689,14 +733,14 @@ int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 
 	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE;
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				fds, LTTNG_ARRAY_SIZE(fds));
 
 	if (ret < 0)
 		goto error;
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 	if (ret)
 		goto error;
 
@@ -734,6 +778,10 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 		},
 	};
 	int ret;
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	struct lttng_ust_abi_object_data *event_notifier_data;
 
 	if (!event_notifier_group || !_event_notifier_data)
@@ -748,7 +796,7 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 	lum.handle = event_notifier_group->header.handle;
 	lum.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				NULL, 0);
 	if (ret < 0) {
@@ -756,7 +804,7 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 		return ret;
 	}
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 	if (ret) {
 		free(event_notifier_data);
 		return ret;
@@ -772,11 +820,15 @@ int lttng_ust_ctl_tracepoint_list(int sock)
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret, tp_list_handle;
 
 	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.cmd = LTTNG_UST_ABI_TRACEPOINT_LIST;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_cmd(&usock, &lum, &lur);
 	if (ret)
 		return ret;
 	tp_list_handle = lur.header.ret_val;
@@ -789,6 +841,10 @@ int lttng_ust_ctl_tracepoint_list_get(int sock, int tp_list_handle,
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	if (!iter)
@@ -796,7 +852,7 @@ int lttng_ust_ctl_tracepoint_list_get(int sock, int tp_list_handle,
 
 	lum.handle = tp_list_handle;
 	lum.cmd = LTTNG_UST_ABI_TRACEPOINT_LIST_GET;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_cmd(&usock, &lum, &lur);
 	if (ret)
 		return ret;
 	DBG("received tracepoint list entry name %s loglevel %d",
@@ -810,11 +866,15 @@ int lttng_ust_ctl_tracepoint_field_list(int sock)
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret, tp_field_list_handle;
 
 	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.cmd = LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_cmd(&usock, &lum, &lur);
 	if (ret)
 		return ret;
 	tp_field_list_handle = lur.header.ret_val;
@@ -827,6 +887,10 @@ int lttng_ust_ctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 	ssize_t len;
 
@@ -835,10 +899,10 @@ int lttng_ust_ctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 
 	lum.handle = tp_field_list_handle;
 	lum.cmd = LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST_GET;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_cmd(&usock, &lum, &lur);
 	if (ret)
 		return ret;
-	len = ustcomm_recv_unix_sock(sock, iter, sizeof(*iter));
+	len = ustcomm_recv_unix_sock(&usock, iter, sizeof(*iter));
 	if (len != sizeof(*iter)) {
 		return -EINVAL;
 	}
@@ -854,6 +918,10 @@ int lttng_ust_ctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	if (!v)
@@ -862,14 +930,14 @@ int lttng_ust_ctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *
 	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.cmd = LTTNG_UST_ABI_TRACER_VERSION;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				NULL, 0,
 				NULL, 0);
 
 	if (ret < 0)
 		return ret;
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 
 	if (ret == 0) {
 		memcpy(v, &lur.cmd.version, sizeof(*v));
@@ -909,6 +977,10 @@ int lttng_ust_ctl_unknown_command(int sock)
 			.iov_len = LTTNG_ARRAY_SIZE(buf),
 		},
 	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 	char dummy = '\0';
 	int fds[2];
@@ -922,7 +994,7 @@ int lttng_ust_ctl_unknown_command(int sock)
 
 	lum.cmd = LTTNG_UST_ABI_UNKNOWN_COMMAND;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				&fds[0], 1);
 
@@ -934,7 +1006,7 @@ int lttng_ust_ctl_unknown_command(int sock)
 		goto out;
 	}
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 
 	switch (ret) {
 	case -LTTNG_UST_ERR_NOSYS:
@@ -970,11 +1042,15 @@ int lttng_ust_ctl_wait_quiescent(int sock)
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.cmd = LTTNG_UST_ABI_WAIT_QUIESCENT;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_cmd(&usock, &lum, &lur);
 	if (ret)
 		return ret;
 	DBG("waited for quiescent state");
@@ -994,6 +1070,10 @@ int lttng_ust_ctl_sock_flush_buffer(int sock, struct lttng_ust_abi_object_data *
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	if (!object)
@@ -1001,7 +1081,7 @@ int lttng_ust_ctl_sock_flush_buffer(int sock, struct lttng_ust_abi_object_data *
 
 	lum.handle = object->header.handle;
 	lum.cmd = LTTNG_UST_ABI_FLUSH_BUFFER;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_cmd(&usock, &lum, &lur);
 	if (ret)
 		return ret;
 	DBG("flushed buffer handle %u", object->header.handle);
@@ -1016,11 +1096,15 @@ int lttng_ust_ctl_send_channel(int sock,
 		int wakeup_fd,
 		int send_fd_only)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	ssize_t len;
 
 	if (!send_fd_only) {
 		/* Send mmap size */
-		len = ustcomm_send_unix_sock(sock, &size, sizeof(size));
+		len = ustcomm_send_unix_sock(&usock, &size, sizeof(size));
 		if (len != sizeof(size)) {
 			if (len < 0)
 				return len;
@@ -1029,7 +1113,7 @@ int lttng_ust_ctl_send_channel(int sock,
 		}
 
 		/* Send channel type */
-		len = ustcomm_send_unix_sock(sock, &type, sizeof(type));
+		len = ustcomm_send_unix_sock(&usock, &type, sizeof(type));
 		if (len != sizeof(type)) {
 			if (len < 0)
 				return len;
@@ -1039,7 +1123,7 @@ int lttng_ust_ctl_send_channel(int sock,
 	}
 
 	/* Send channel data */
-	len = ustcomm_send_unix_sock(sock, data, size);
+	len = ustcomm_send_unix_sock(&usock, data, size);
 	if (len != size) {
 		if (len < 0)
 			return len;
@@ -1048,7 +1132,7 @@ int lttng_ust_ctl_send_channel(int sock,
 	}
 
 	/* Send wakeup fd */
-	len = ustcomm_send_fds_unix_sock(sock, &wakeup_fd, 1);
+	len = ustcomm_send_fds_unix_sock(&usock, &wakeup_fd, 1);
 	if (len <= 0) {
 		if (len < 0)
 			return len;
@@ -1065,6 +1149,10 @@ int lttng_ust_ctl_send_stream(int sock,
 		int shm_fd, int wakeup_fd,
 		int send_fd_only)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	ssize_t len;
 	int fds[2];
 
@@ -1073,7 +1161,7 @@ int lttng_ust_ctl_send_stream(int sock,
 			/* finish iteration */
 			uint64_t v = -1;
 
-			len = ustcomm_send_unix_sock(sock, &v, sizeof(v));
+			len = ustcomm_send_unix_sock(&usock, &v, sizeof(v));
 			if (len != sizeof(v)) {
 				if (len < 0)
 					return len;
@@ -1084,7 +1172,7 @@ int lttng_ust_ctl_send_stream(int sock,
 		}
 
 		/* Send mmap size */
-		len = ustcomm_send_unix_sock(sock, &memory_map_size,
+		len = ustcomm_send_unix_sock(&usock, &memory_map_size,
 			sizeof(memory_map_size));
 		if (len != sizeof(memory_map_size)) {
 			if (len < 0)
@@ -1094,7 +1182,7 @@ int lttng_ust_ctl_send_stream(int sock,
 		}
 
 		/* Send stream nr */
-		len = ustcomm_send_unix_sock(sock, &stream_nr,
+		len = ustcomm_send_unix_sock(&usock, &stream_nr,
 			sizeof(stream_nr));
 		if (len != sizeof(stream_nr)) {
 			if (len < 0)
@@ -1107,7 +1195,7 @@ int lttng_ust_ctl_send_stream(int sock,
 	/* Send shm fd and wakeup fd */
 	fds[0] = shm_fd;
 	fds[1] = wakeup_fd;
-	len = ustcomm_send_fds_unix_sock(sock, fds, 2);
+	len = ustcomm_send_fds_unix_sock(&usock, fds, 2);
 	if (len <= 0) {
 		if (len < 0)
 			return len;
@@ -1120,6 +1208,11 @@ int lttng_ust_ctl_send_stream(int sock,
 int lttng_ust_ctl_recv_channel_from_consumer(int sock,
 		struct lttng_ust_abi_object_data **_channel_data)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
+
 	struct lttng_ust_abi_object_data *channel_data;
 	ssize_t len;
 	int wakeup_fd;
@@ -1134,7 +1227,7 @@ int lttng_ust_ctl_recv_channel_from_consumer(int sock,
 	channel_data->header.handle = -1;
 
 	/* recv mmap size */
-	len = ustcomm_recv_unix_sock(sock, &channel_data->header.size,
+	len = ustcomm_recv_unix_sock(&usock, &channel_data->header.size,
 			sizeof(channel_data->header.size));
 	if (len != sizeof(channel_data->header.size)) {
 		if (len < 0)
@@ -1145,7 +1238,7 @@ int lttng_ust_ctl_recv_channel_from_consumer(int sock,
 	}
 
 	/* recv channel type */
-	len = ustcomm_recv_unix_sock(sock, &channel_data->type.channel.type,
+	len = ustcomm_recv_unix_sock(&usock, &channel_data->type.channel.type,
 			sizeof(channel_data->type.channel.type));
 	if (len != sizeof(channel_data->type.channel.type)) {
 		if (len < 0)
@@ -1161,7 +1254,7 @@ int lttng_ust_ctl_recv_channel_from_consumer(int sock,
 		ret = -ENOMEM;
 		goto error;
 	}
-	len = ustcomm_recv_unix_sock(sock, channel_data->type.channel.data,
+	len = ustcomm_recv_unix_sock(&usock, channel_data->type.channel.data,
 			channel_data->header.size);
 	if (len != channel_data->header.size) {
 		if (len < 0)
@@ -1171,7 +1264,7 @@ int lttng_ust_ctl_recv_channel_from_consumer(int sock,
 		goto error_recv_data;
 	}
 	/* recv wakeup fd */
-	len = ustcomm_recv_fds_unix_sock(sock, &wakeup_fd, 1);
+	len = ustcomm_recv_fds_unix_sock(&usock, &wakeup_fd, 1);
 	if (len <= 0) {
 		if (len < 0) {
 			ret = len;
@@ -1196,6 +1289,10 @@ error_alloc:
 int lttng_ust_ctl_recv_stream_from_consumer(int sock,
 		struct lttng_ust_abi_object_data **_stream_data)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	struct lttng_ust_abi_object_data *stream_data;
 	ssize_t len;
 	int ret;
@@ -1211,7 +1308,7 @@ int lttng_ust_ctl_recv_stream_from_consumer(int sock,
 	stream_data->header.handle = -1;
 
 	/* recv mmap size */
-	len = ustcomm_recv_unix_sock(sock, &stream_data->header.size,
+	len = ustcomm_recv_unix_sock(&usock, &stream_data->header.size,
 			sizeof(stream_data->header.size));
 	if (len != sizeof(stream_data->header.size)) {
 		if (len < 0 && len >= INT_MIN)
@@ -1226,7 +1323,7 @@ int lttng_ust_ctl_recv_stream_from_consumer(int sock,
 	}
 
 	/* recv stream nr */
-	len = ustcomm_recv_unix_sock(sock, &stream_data->type.stream.stream_nr,
+	len = ustcomm_recv_unix_sock(&usock, &stream_data->type.stream.stream_nr,
 			sizeof(stream_data->type.stream.stream_nr));
 	if (len != sizeof(stream_data->type.stream.stream_nr)) {
 		if (len < 0 && len >= INT_MIN)
@@ -1237,7 +1334,7 @@ int lttng_ust_ctl_recv_stream_from_consumer(int sock,
 	}
 
 	/* recv shm fd and wakeup fd */
-	len = ustcomm_recv_fds_unix_sock(sock, fds, 2);
+	len = ustcomm_recv_fds_unix_sock(&usock, fds, 2);
 	if (len <= 0) {
 		if (len < 0 && len >= INT_MIN) {
 			ret = len;
@@ -1282,6 +1379,10 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 		},
 
 	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 	int fds[] = {
 		channel_data->type.channel.wakeup_fd,
@@ -1297,13 +1398,13 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 	lum.handle = session_handle;
 	lum.cmd = LTTNG_UST_ABI_CHANNEL;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				fds, LTTNG_ARRAY_SIZE(fds));
 	if (ret < 0)
 		return ret;
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 	if (!ret) {
 		channel_data->header.handle = lur.header.ret_val;
 	} else if (ret == -EINVAL) {
@@ -1311,7 +1412,7 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 		 * Command unknown from remote end. The communication socket is
 		 * now out-of-sync and needs to be shutdown.
 		 */
-		(void) ustcomm_shutdown_unix_sock(sock);
+		(void) ustcomm_shutdown_unix_sock(&usock);
 	}
 	return ret;
 }
@@ -1336,6 +1437,10 @@ int lttng_ust_ctl_send_stream_to_ust(int sock,
 			.iov_len = sizeof(stream),
 		},
 	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret, fds[2];
 
 	if (!stream_data || !channel_data)
@@ -1349,20 +1454,20 @@ int lttng_ust_ctl_send_stream_to_ust(int sock,
 	lum.handle = channel_data->header.handle;
 	lum.cmd = LTTNG_UST_ABI_STREAM;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				fds, LTTNG_ARRAY_SIZE(fds));
 
 	if (ret < 0)
 		return ret;
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 	if (ret == -EINVAL) {
 		/*
 		 * Command unknown from remote end. The communication socket is
 		 * now out-of-sync and needs to be shutdown.
 		 */
-		(void) ustcomm_shutdown_unix_sock(sock);
+		(void) ustcomm_shutdown_unix_sock(&usock);
 	}
 	return ret;
 }
@@ -3723,10 +3828,22 @@ int lttng_ust_ctl_recv_reg_msg(int sock,
 	int *byte_order,
 	char *name)
 {
+	/*
+	 * Even though `sock` can be of type `LTTNG_UST_CTL_SOCKET_CMD`,
+	 * resources are shared with the application yet. Therefore, the
+	 * application does not need to reach a quiescent state.
+	 *
+	 * The caller of this function will typically close `sock` soon
+	 * after. Thus, it is fine to shutdown the socket on both directions.
+	 */
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	ssize_t len;
 	struct lttng_ust_ctl_reg_msg reg_msg;
 
-	len = ustcomm_recv_unix_sock(sock, &reg_msg, sizeof(reg_msg));
+	len = ustcomm_recv_unix_sock(&usock, &reg_msg, sizeof(reg_msg));
 	if (len > 0 && len != sizeof(reg_msg))
 		return -EIO;
 	if (len == 0)
@@ -3769,10 +3886,14 @@ int lttng_ust_ctl_recv_reg_msg(int sock,
 
 int lttng_ust_ctl_recv_notify(int sock, enum lttng_ust_ctl_notify_cmd *notify_cmd)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	struct ustcomm_notify_hdr header;
 	ssize_t len;
 
-	len = ustcomm_recv_unix_sock(sock, &header, sizeof(header));
+	len = ustcomm_recv_unix_sock(&usock, &header, sizeof(header));
 	if (len > 0 && len != sizeof(header))
 		return -EIO;
 	if (len == 0)
@@ -3812,13 +3933,17 @@ int lttng_ust_ctl_recv_register_event(int sock,
 	char **model_emf_uri,
 	uint64_t *user_token)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	ssize_t len;
 	struct ustcomm_notify_event_msg msg;
 	size_t signature_len, fields_len, model_emf_uri_len;
 	char *a_sign = NULL, *a_model_emf_uri = NULL;
 	struct lttng_ust_ctl_field *a_fields = NULL;
 
-	len = ustcomm_recv_unix_sock(sock, &msg, sizeof(msg));
+	len = ustcomm_recv_unix_sock(&usock, &msg, sizeof(msg));
 	if (len > 0 && len != sizeof(msg))
 		return -EIO;
 	if (len == 0)
@@ -3845,7 +3970,7 @@ int lttng_ust_ctl_recv_register_event(int sock,
 	a_sign = zmalloc(signature_len);
 	if (!a_sign)
 		return -ENOMEM;
-	len = ustcomm_recv_unix_sock(sock, a_sign, signature_len);
+	len = ustcomm_recv_unix_sock(&usock, a_sign, signature_len);
 	if (len > 0 && len != signature_len) {
 		len = -EIO;
 		goto signature_error;
@@ -3867,7 +3992,7 @@ int lttng_ust_ctl_recv_register_event(int sock,
 			len = -ENOMEM;
 			goto signature_error;
 		}
-		len = ustcomm_recv_unix_sock(sock, a_fields, fields_len);
+		len = ustcomm_recv_unix_sock(&usock, a_fields, fields_len);
 		if (len > 0 && len != fields_len) {
 			len = -EIO;
 			goto fields_error;
@@ -3888,7 +4013,7 @@ int lttng_ust_ctl_recv_register_event(int sock,
 			len = -ENOMEM;
 			goto fields_error;
 		}
-		len = ustcomm_recv_unix_sock(sock, a_model_emf_uri,
+		len = ustcomm_recv_unix_sock(&usock, a_model_emf_uri,
 				model_emf_uri_len);
 		if (len > 0 && len != model_emf_uri_len) {
 			len = -EIO;
@@ -3928,6 +4053,10 @@ int lttng_ust_ctl_reply_register_event(int sock,
 	uint32_t id,
 	int ret_code)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	ssize_t len;
 	struct {
 		struct ustcomm_notify_hdr header;
@@ -3938,7 +4067,7 @@ int lttng_ust_ctl_reply_register_event(int sock,
 	reply.header.notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_EVENT;
 	reply.r.ret_code = ret_code;
 	reply.r.id = id;
-	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
+	len = ustcomm_send_unix_sock(&usock, &reply, sizeof(reply));
 	if (len > 0 && len != sizeof(reply))
 		return -EIO;
 	if (len < 0)
@@ -3975,13 +4104,17 @@ int lttng_ust_ctl_recv_register_key(int sock,
 					 */
 	uint64_t *user_token)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	ssize_t len;
 	struct ustcomm_notify_key_msg msg;
 	size_t dimension_indexes_len, key_string_len;
 	uint64_t *a_dimension_indexes = NULL;
 	char *a_key_string = NULL;
 
-	len = ustcomm_recv_unix_sock(sock, &msg, sizeof(msg));
+	len = ustcomm_recv_unix_sock(&usock, &msg, sizeof(msg));
 	if (len > 0 && len != sizeof(msg))
 		return -EIO;
 	if (len == 0)
@@ -4003,7 +4136,8 @@ int lttng_ust_ctl_recv_register_key(int sock,
 			len = -ENOMEM;
 			goto error;
 		}
-		len = ustcomm_recv_unix_sock(sock, a_dimension_indexes, dimension_indexes_len);
+		len = ustcomm_recv_unix_sock(&usock, a_dimension_indexes,
+				dimension_indexes_len);
 		if (len > 0 && len != dimension_indexes_len) {
 			len = -EIO;
 			goto error;
@@ -4024,7 +4158,7 @@ int lttng_ust_ctl_recv_register_key(int sock,
 			len = -ENOMEM;
 			goto error;
 		}
-		len = ustcomm_recv_unix_sock(sock, a_key_string, key_string_len);
+		len = ustcomm_recv_unix_sock(&usock, a_key_string, key_string_len);
 		if (len > 0 && len != key_string_len) {
 			len = -EIO;
 			goto error;
@@ -4057,6 +4191,10 @@ int lttng_ust_ctl_reply_register_key(int sock,
 	uint64_t index,			/* Index within dimension (input) */
 	int ret_code)			/* return code. 0 ok, negative error */
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	ssize_t len;
 	struct {
 		struct ustcomm_notify_hdr header;
@@ -4067,7 +4205,8 @@ int lttng_ust_ctl_reply_register_key(int sock,
 	reply.header.notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_KEY;
 	reply.r.ret_code = ret_code;
 	reply.r.index = index;
-	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
+	/* Notify socket: use SHUT_RDWR on error. */
+	len = ustcomm_send_unix_sock(&usock, &reply, sizeof(reply));
 	if (len > 0 && len != sizeof(reply))
 		return -EIO;
 	if (len < 0)
@@ -4085,12 +4224,16 @@ int lttng_ust_ctl_recv_register_enum(int sock,
 	struct lttng_ust_ctl_enum_entry **entries,
 	size_t *nr_entries)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	ssize_t len;
 	struct ustcomm_notify_enum_msg msg;
 	size_t entries_len;
 	struct lttng_ust_ctl_enum_entry *a_entries = NULL;
 
-	len = ustcomm_recv_unix_sock(sock, &msg, sizeof(msg));
+	len = ustcomm_recv_unix_sock(&usock, &msg, sizeof(msg));
 	if (len > 0 && len != sizeof(msg))
 		return -EIO;
 	if (len == 0)
@@ -4112,7 +4255,7 @@ int lttng_ust_ctl_recv_register_enum(int sock,
 		a_entries = zmalloc(entries_len);
 		if (!a_entries)
 			return -ENOMEM;
-		len = ustcomm_recv_unix_sock(sock, a_entries, entries_len);
+		len = ustcomm_recv_unix_sock(&usock, a_entries, entries_len);
 		if (len > 0 && len != entries_len) {
 			len = -EIO;
 			goto entries_error;
@@ -4142,6 +4285,10 @@ int lttng_ust_ctl_reply_register_enum(int sock,
 	uint64_t id,
 	int ret_code)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	ssize_t len;
 	struct {
 		struct ustcomm_notify_hdr header;
@@ -4152,7 +4299,7 @@ int lttng_ust_ctl_reply_register_enum(int sock,
 	reply.header.notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_ENUM;
 	reply.r.ret_code = ret_code;
 	reply.r.enum_id = id;
-	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
+	len = ustcomm_send_unix_sock(&usock, &reply, sizeof(reply));
 	if (len > 0 && len != sizeof(reply))
 		return -EIO;
 	if (len < 0)
@@ -4169,12 +4316,16 @@ int lttng_ust_ctl_recv_register_channel(int sock,
 	size_t *nr_fields,
 	struct lttng_ust_ctl_field **fields)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	ssize_t len;
 	struct ustcomm_notify_channel_msg msg;
 	size_t fields_len;
 	struct lttng_ust_ctl_field *a_fields;
 
-	len = ustcomm_recv_unix_sock(sock, &msg, sizeof(msg));
+	len = ustcomm_recv_unix_sock(&usock, &msg, sizeof(msg));
 	if (len > 0 && len != sizeof(msg))
 		return -EIO;
 	if (len == 0)
@@ -4197,7 +4348,7 @@ int lttng_ust_ctl_recv_register_channel(int sock,
 			len = -ENOMEM;
 			goto alloc_error;
 		}
-		len = ustcomm_recv_unix_sock(sock, a_fields, fields_len);
+		len = ustcomm_recv_unix_sock(&usock, a_fields, fields_len);
 		if (len > 0 && len != fields_len) {
 			len = -EIO;
 			goto fields_error;
@@ -4230,6 +4381,10 @@ int lttng_ust_ctl_reply_register_channel(int sock,
 	enum lttng_ust_ctl_channel_header header_type,
 	int ret_code)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	ssize_t len;
 	struct {
 		struct ustcomm_notify_hdr header;
@@ -4251,7 +4406,7 @@ int lttng_ust_ctl_reply_register_channel(int sock,
 		reply.r.header_type = 0;
 		break;
 	}
-	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
+	len = ustcomm_send_unix_sock(&usock, &reply, sizeof(reply));
 	if (len > 0 && len != sizeof(reply))
 		return -EIO;
 	if (len < 0)
@@ -4264,11 +4419,15 @@ int lttng_ust_ctl_regenerate_statedump(int sock, int handle)
 {
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	lum.handle = handle;
 	lum.cmd = LTTNG_UST_ABI_SESSION_STATEDUMP;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_cmd(&usock, &lum, &lur);
 	if (ret)
 		return ret;
 	DBG("Regenerated statedump for handle %u", handle);
@@ -4551,6 +4710,10 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 			.iov_len = counter_data->header.size,
 		},
 	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	if (!counter_data)
@@ -4559,14 +4722,14 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 	lum.handle = parent_handle;
 	lum.cmd = LTTNG_UST_ABI_COUNTER;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				NULL, 0);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 	if (!ret) {
 		counter_data->header.handle = lur.header.ret_val;
 	}
@@ -4597,6 +4760,10 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 	int fds[] = {
 		counter_channel_data->type.counter_channel.shm_fd,
 	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret;
 
 	if (!counter_data || !counter_channel_data)
@@ -4608,14 +4775,14 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 	lum.handle = counter_data->header.handle;	/* parent handle */
 	lum.cmd = LTTNG_UST_ABI_COUNTER_CHANNEL;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				fds, LTTNG_ARRAY_SIZE(fds));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 	if (!ret) {
 		counter_channel_data->header.handle = lur.header.ret_val;
 	}
@@ -4643,6 +4810,10 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 			.iov_len = sizeof(counter_cpu),
 		},
 	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	int ret, fds[1];
 
 	if (!counter_data || !counter_cpu_data)
@@ -4656,7 +4827,7 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 	lum.handle = counter_data->header.handle;	/* parent handle */
 	lum.cmd = LTTNG_UST_ABI_COUNTER_CPU;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				fds, LTTNG_ARRAY_SIZE(fds));
 
@@ -4664,7 +4835,7 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 		return ret;
 	}
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 	if (!ret) {
 		counter_cpu_data->header.handle = lur.header.ret_val;
 	}
@@ -4719,9 +4890,12 @@ int lttng_ust_ctl_counter_create_event(int sock,
 			.iov_len = counter_event_len,
 		},
 	};
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_WR,
+	};
 	struct lttng_ust_abi_object_data *counter_event_data;
 	int ret;
-
 	if (!counter_data || !_counter_event_data)
 		return -EINVAL;
 
@@ -4733,7 +4907,7 @@ int lttng_ust_ctl_counter_create_event(int sock,
 	lum.handle = counter_data->header.handle;
 	lum.cmd = LTTNG_UST_ABI_COUNTER_EVENT;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
+	ret = ustcomm_send_app_msg(&usock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				NULL, 0);
 	if (ret < 0) {
@@ -4741,7 +4915,7 @@ int lttng_ust_ctl_counter_create_event(int sock,
 		return ret;
 	}
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(&usock, &lur, lum.handle, lum.cmd);
 	if (ret) {
 		free(counter_event_data);
 		return ret;

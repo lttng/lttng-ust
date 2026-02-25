@@ -45,6 +45,42 @@ int serialize_fields(struct lttng_ust_session *session,
 		const struct lttng_ust_event_field * const *lttng_fields);
 
 /*
+ * Like sendmsg(2), but restart operation on EINTR.
+ */
+static
+int safe_sendmsg(int sockfd, const struct msghdr *msg, int flags)
+{
+	int ret;
+
+	for (;;) {
+		ret = sendmsg(sockfd, msg, flags);
+		if (ret < 0 && errno == EINTR)
+			continue;
+		break;
+	}
+
+	return ret;
+}
+
+/*
+ * Like recvmsg(2), but restart operation on EINTR.
+ */
+static
+int safe_recvmsg(int sockfd, struct msghdr *msg, int flags)
+{
+	int ret;
+
+	for (;;) {
+		ret = recvmsg(sockfd, msg, flags);
+		if (ret < 0 && errno == EINTR)
+			continue;
+		break;
+	}
+
+	return ret;
+}
+
+/*
  * ustcomm_connect_unix_sock
  *
  * Connect to unix socket using the path name.
@@ -228,16 +264,43 @@ int ustcomm_close_unix_sock(int sock)
 }
 
 /*
+ * Translate enum ustcomm_shutdown to kernel shutdown(2) how value.
+ * Returns -1 for USTCOMM_SHUTDOWN_NONE (caller should not call shutdown).
+ */
+static
+int ustcomm_shutdown_to_int(enum ustcomm_shutdown shutdown_how)
+{
+	switch (shutdown_how) {
+	case USTCOMM_SHUTDOWN_NONE:
+		return -1;
+	case USTCOMM_SHUTDOWN_RD:
+		return SHUT_RD;
+	case USTCOMM_SHUTDOWN_WR:
+		return SHUT_WR;
+	case USTCOMM_SHUTDOWN_RDWR:
+		return SHUT_RDWR;
+	default:
+		return -1;
+	}
+}
+
+/*
  * ustcomm_shutdown_unix_sock
  *
  * Shutdown unix socket. Keeps the file descriptor open, but shutdown
  * communication.
+ *
+ * If shutdown_on_error is USTCOMM_SHUTDOWN_NONE, this is a no-op.
  */
-int ustcomm_shutdown_unix_sock(int sock)
+int ustcomm_shutdown_unix_sock(const struct ustcomm_sock *sock)
 {
-	int ret;
+	int ret, how;
 
-	ret = shutdown(sock, SHUT_RDWR);
+	how = ustcomm_shutdown_to_int(sock->shutdown_on_error);
+	if (how < 0)
+		return 0;
+
+	ret = shutdown(sock->fd, how);
 	if (ret) {
 		PERROR("Socket shutdown error");
 		ret = -errno;
@@ -253,7 +316,8 @@ int ustcomm_shutdown_unix_sock(int sock)
  * Return the size of received data.
  * Return 0 on orderly shutdown.
  */
-ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
+ssize_t ustcomm_recv_unix_sock(const struct ustcomm_sock *sock,
+			void *buf, size_t len)
 {
 	struct msghdr msg;
 	struct iovec iov[1];
@@ -269,7 +333,7 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 
 	do {
 		len_last = iov[0].iov_len;
-		ret = recvmsg(sock, &msg, 0);
+		ret = recvmsg(sock->fd, &msg, 0);
 		if (ret > 0) {
 			iov[0].iov_base += ret;
 			iov[0].iov_len -= ret;
@@ -299,7 +363,8 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
  * Send iov[iovcnt] over sock. Using sendmsg API.
  * Return the size of sent data.
  */
-ssize_t ustcomm_sendv_unix_sock(int sock, const struct iovec *iov, int iovcnt)
+ssize_t ustcomm_sendv_unix_sock(const struct ustcomm_sock *sock,
+		const struct iovec *iov, int iovcnt)
 {
 	struct msghdr msg;
 	ssize_t ret;
@@ -316,9 +381,7 @@ ssize_t ustcomm_sendv_unix_sock(int sock, const struct iovec *iov, int iovcnt)
 	 * by ignoring SIGPIPE, but we don't have this luxury on the
 	 * libust side.
 	 */
-	do {
-		ret = sendmsg(sock, &msg, MSG_NOSIGNAL);
-	} while (ret < 0 && errno == EINTR);
+	ret = safe_sendmsg(sock->fd, &msg, MSG_NOSIGNAL);
 
 	if (ret < 0) {
 		if (errno != EPIPE && errno != ECONNRESET)
@@ -333,7 +396,8 @@ ssize_t ustcomm_sendv_unix_sock(int sock, const struct iovec *iov, int iovcnt)
 	return ret;
 }
 
-ssize_t ustcomm_send_unix_sock(int sock, const void *buf, size_t len)
+ssize_t ustcomm_send_unix_sock(const struct ustcomm_sock *sock,
+		const void *buf, size_t len)
 {
 	struct iovec iov[1];
 	iov[0].iov_base = (void *) buf;
@@ -346,7 +410,7 @@ ssize_t ustcomm_send_unix_sock(int sock, const void *buf, size_t len)
  *
  * Returns the size of data sent, or negative error value.
  */
-ssize_t ustcomm_send_fds_unix_sock(int sock, int *fds, size_t nb_fd)
+ssize_t ustcomm_send_fds_unix_sock(const struct ustcomm_sock *sock, int *fds, size_t nb_fd)
 {
 	struct msghdr msg;
 	struct cmsghdr *cmptr;
@@ -380,9 +444,8 @@ ssize_t ustcomm_send_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 	msg.msg_iov = iov;
 	msg.msg_iovlen = 1;
 
-	do {
-		ret = sendmsg(sock, &msg, MSG_NOSIGNAL);
-	} while (ret < 0 && errno == EINTR);
+	ret = safe_sendmsg(sock->fd, &msg, MSG_NOSIGNAL);
+
 	if (ret < 0) {
 		/*
 		 * We consider EPIPE and ECONNRESET as expected.
@@ -393,6 +456,8 @@ ssize_t ustcomm_send_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 		ret = -errno;
 		if (ret == -ECONNRESET)
 			ret = -EPIPE;
+
+		(void) ustcomm_shutdown_unix_sock(sock);
 	}
 	return ret;
 }
@@ -404,7 +469,7 @@ ssize_t ustcomm_send_fds_unix_sock(int sock, int *fds, size_t nb_fd)
  * actually received in nb_fd.
  * Returns -EPIPE on orderly shutdown.
  */
-ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
+ssize_t ustcomm_recv_fds_unix_sock(const struct ustcomm_sock *sock, int *fds, size_t nb_fd)
 {
 	struct iovec iov[1];
 	ssize_t ret = 0;
@@ -424,9 +489,8 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 	msg.msg_control = recv_fd;
 	msg.msg_controllen = sizeof(recv_fd);
 
-	do {
-		ret = recvmsg(sock, &msg, MSG_CMSG_CLOEXEC);
-	} while (ret < 0 && errno == EINTR);
+	ret = safe_recvmsg(sock->fd, &msg, MSG_CMSG_CLOEXEC);
+
 	if (ret < 0) {
 		if (errno != EPIPE && errno != ECONNRESET) {
 			PERROR("recvmsg fds");
@@ -434,6 +498,8 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 		ret = -errno;
 		if (ret == -ECONNRESET)
 			ret = -EPIPE;
+
+		(void) ustcomm_shutdown_unix_sock(sock);
 		goto end;
 	}
 	if (ret == 0) {
@@ -535,7 +601,8 @@ prepare_payload_data(struct msghdr *msg, struct iovec *iov, int iovcnt)
 	return total_size;
 }
 
-int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg_header *lum,
+int ustcomm_send_app_msg(const struct ustcomm_sock *sock,
+			struct ustcomm_ust_msg_header *lum,
 			struct iovec *iov, int iovcnt,
 			const int *fds, size_t fds_cnt)
 {
@@ -600,10 +667,11 @@ int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg_header *lum,
 		return 0;
 	}
 
-	sent_size = sendmsg(sock, &msghdr, MSG_NOSIGNAL);
+	sent_size = safe_sendmsg(sock->fd, &msghdr, MSG_NOSIGNAL);
 
 	if (sent_size != lum->payload_size) {
 		if (sent_size < 0) {
+			(void) ustcomm_shutdown_unix_sock(sock);
 			return sent_size;
 		} else {
 			ERR("incorrect message size: %zd\n", sent_size);
@@ -614,8 +682,9 @@ int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg_header *lum,
 	return 0;
 }
 
-int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
-			  uint32_t expected_handle, uint32_t expected_cmd)
+int ustcomm_recv_app_reply(const struct ustcomm_sock *sock,
+			struct ustcomm_ust_reply *lur,
+			uint32_t expected_handle, uint32_t expected_cmd)
 {
 	ssize_t len;
 
@@ -654,7 +723,7 @@ int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
 	}
 }
 
-int ustcomm_send_app_cmd(int sock,
+int ustcomm_send_app_cmd(const struct ustcomm_sock *sock,
 			struct ustcomm_ust_msg_header *lum,
 			struct ustcomm_ust_reply *lur)
 {
@@ -674,7 +743,7 @@ int ustcomm_send_app_cmd(int sock,
 /*
  * Returns 0 on success, negative error value on error.
  */
-int ustcomm_send_reg_msg(int sock,
+int ustcomm_send_reg_msg(const struct ustcomm_sock *sock,
 		enum lttng_ust_ctl_socket_type type,
 		uint32_t bits_per_long,
 		uint32_t uint8_t_alignment,
@@ -1314,7 +1383,7 @@ error_type:
 /*
  * Returns 0 on success, negative error value on error.
  */
-int ustcomm_register_event(int sock,
+int ustcomm_register_event(const struct ustcomm_sock *sock,
 	struct lttng_ust_session *session,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
@@ -1460,7 +1529,7 @@ error_fields:
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
-int ustcomm_register_key(int sock,
+int ustcomm_register_key(const struct ustcomm_sock *sock,
 	int session_objd,		/* session descriptor */
 	int map_objd,			/* map descriptor */
 	uint32_t dimension,
@@ -1568,7 +1637,7 @@ error_send:
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
-int ustcomm_register_enum(int sock,
+int ustcomm_register_enum(const struct ustcomm_sock *sock,
 	int session_objd,		/* session descriptor */
 	const char *enum_name,		/* enum name (input) */
 	size_t nr_entries,		/* entries */
@@ -1672,7 +1741,7 @@ error_entries:
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
-int ustcomm_register_channel(int sock,
+int ustcomm_register_channel(const struct ustcomm_sock *sock,
 	struct lttng_ust_session *session,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */

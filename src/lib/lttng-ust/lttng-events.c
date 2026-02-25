@@ -423,6 +423,10 @@ static
 int lttng_enum_create(const struct lttng_ust_enum_desc *desc,
 		struct lttng_ust_session *session)
 {
+	struct ustcomm_sock usock = {
+		.fd = -1,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	const char *enum_name = desc->name;
 	struct lttng_enum *_enum;
 	struct cds_hlist_head *head;
@@ -441,7 +445,7 @@ int lttng_enum_create(const struct lttng_ust_enum_desc *desc,
 		goto exist;
 	}
 
-	notify_socket = lttng_get_notify_socket(session->priv->owner);
+	notify_socket = usock.fd = lttng_get_notify_socket(session->priv->owner);
 	if (notify_socket < 0) {
 		ret = notify_socket;
 		goto socket_error;
@@ -455,7 +459,7 @@ int lttng_enum_create(const struct lttng_ust_enum_desc *desc,
 	_enum->session = session;
 	_enum->desc = desc;
 
-	ret = ustcomm_register_enum(notify_socket,
+	ret = ustcomm_register_enum(&usock,
 		session->priv->objd,
 		enum_name,
 		desc->nr_entries,
@@ -586,6 +590,10 @@ int lttng_session_statedump(struct lttng_ust_session *session)
 
 int lttng_session_enable(struct lttng_ust_session *session)
 {
+	struct ustcomm_sock usock = {
+		.fd = -1,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+	};
 	int ret = 0;
 	struct lttng_ust_channel_buffer_private *chan;
 	int notify_socket;
@@ -595,7 +603,7 @@ int lttng_session_enable(struct lttng_ust_session *session)
 		goto end;
 	}
 
-	notify_socket = lttng_get_notify_socket(session->priv->owner);
+	notify_socket = usock.fd = lttng_get_notify_socket(session->priv->owner);
 	if (notify_socket < 0)
 		return notify_socket;
 
@@ -629,7 +637,7 @@ int lttng_session_enable(struct lttng_ust_session *session)
 				return ret;
 			}
 		}
-		ret = ustcomm_register_channel(notify_socket,
+		ret = ustcomm_register_channel(&usock,
 			session,
 			session->priv->objd,
 			chan->parent.objd,
@@ -1028,6 +1036,10 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 			caa_container_of(event->priv, struct lttng_ust_event_session_common_private, parent);
 		struct lttng_ust_session *session = event_enabler_session->chan->session;
 		const struct lttng_ust_event_desc *desc = event->priv->desc;
+		struct ustcomm_sock usock = {
+			.fd = -1,
+			.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+		};
 		int notify_socket, loglevel, ret;
 		const char *uri;
 		uint32_t id;
@@ -1041,12 +1053,12 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 		else
 			uri = NULL;
 
-		notify_socket = lttng_get_notify_socket(session->priv->owner);
+		notify_socket = usock.fd = lttng_get_notify_socket(session->priv->owner);
 		if (notify_socket < 0)
 			return notify_socket;
 
 		/* Fetch event ID from sessiond */
-		ret = ustcomm_register_event(notify_socket,
+		ret = ustcomm_register_event(&usock,
 			session,
 			session->priv->objd,
 			event_enabler_session->chan->priv->objd,
@@ -1071,15 +1083,19 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 		struct lttng_ust_event_session_common_private *event_session_priv =
 			caa_container_of(event->priv, struct lttng_ust_event_session_common_private, parent);
 		struct lttng_ust_session *session = event_enabler_session->chan->session;
+		struct ustcomm_sock usock = {
+			.fd = -1,
+			.shutdown_on_error = USTCOMM_SHUTDOWN_RDWR,
+		};
 		uint64_t dimension_index[LTTNG_COUNTER_DIMENSION_MAX];
 		int notify_socket, ret;
 
-		notify_socket = lttng_get_notify_socket(session->priv->owner);
+		notify_socket = usock.fd = lttng_get_notify_socket(session->priv->owner);
 		if (notify_socket < 0)
 			return notify_socket;
 
 		/* Fetch key index from sessiond */
-		ret = ustcomm_register_key(notify_socket,
+		ret = ustcomm_register_key(&usock,
 			session->priv->objd,
 			event_enabler_session->chan->priv->objd,
 			0,	/* target dimension */

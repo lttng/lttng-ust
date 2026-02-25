@@ -46,6 +46,7 @@
 #include "common/ustcomm.h"
 #include "common/logging.h"
 #include "common/macros.h"
+#include "common/testpoint.h"
 #include "common/tracepoint.h"
 #include "lttng-tracer-core.h"
 #include "common/compat/pthread.h"
@@ -805,7 +806,13 @@ static
 int register_to_sessiond(int socket, enum lttng_ust_ctl_socket_type type,
 		const char *procname)
 {
-	return ustcomm_send_reg_msg(socket,
+	const struct ustcomm_sock usock = {
+		.fd = socket,
+		.shutdown_on_error = type == LTTNG_UST_CTL_SOCKET_CMD ?
+		USTCOMM_SHUTDOWN_NONE : USTCOMM_SHUTDOWN_RDWR,
+	};
+
+	return ustcomm_send_reg_msg(&usock,
 		type,
 		CAA_BITS_PER_LONG,
 		lttng_ust_rb_alignof(uint8_t) * CHAR_BIT,
@@ -819,9 +826,17 @@ int register_to_sessiond(int socket, enum lttng_ust_ctl_socket_type type,
 static
 int send_reply(int sock, struct ustcomm_ust_reply *lur)
 {
+	const struct ustcomm_sock usock = {
+		.fd = sock,
+		.shutdown_on_error = USTCOMM_SHUTDOWN_NONE,
+	};
 	ssize_t len;
 
-	len = ustcomm_send_unix_sock(sock, lur, sizeof(*lur));
+	/*
+	 * Application command socket: never shutdown on error.
+	 * Applications close the socket when reaching a quiescent state.
+	 */
+	len = ustcomm_send_unix_sock(&usock, lur, sizeof(*lur));
 	switch (len) {
 	case sizeof(*lur):
 		DBG("message successfully sent");
@@ -1154,6 +1169,8 @@ int handle_message(struct sock_info *sock_info,
 	ssize_t len;
 	void *var_len_cmd_data = NULL;
 	const int *ancillary_fds = (const int *)ancillary_data;
+
+	TESTPOINT("comm_handle_message");
 
 	if (ust_lock()) {
 		ret = -LTTNG_UST_ERR_EXITING;
@@ -1610,9 +1627,13 @@ int handle_message(struct sock_info *sock_info,
 	 * after the reply.
 	 */
 	if (lur.header.ret_code == LTTNG_UST_OK) {
+		const struct ustcomm_sock usock = {
+				.fd = sock,
+				.shutdown_on_error = USTCOMM_SHUTDOWN_NONE,
+		};
 		switch (lum->cmd) {
 		case LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST_GET:
-			len = ustcomm_send_unix_sock(sock,
+			len = ustcomm_send_unix_sock(&usock,
 				&args.field_list.entry,
 				sizeof(args.field_list.entry));
 			if (len < 0) {
@@ -2345,11 +2366,19 @@ restart:
 		char ancillary_buf[CMSG_SPACE(LTTNG_UST_COMM_MAX_SEND_FDS * sizeof(int))]
 			__attribute__((aligned(__alignof__(struct cmsghdr))));
 		bool known;
+		const struct ustcomm_sock usock = {
+			.fd = sock,
+			.shutdown_on_error = USTCOMM_SHUTDOWN_NONE,
+		};
 
 		memset(payload_buf, 0, sizeof(payload_buf));
 		memset(ancillary_buf, 0, sizeof(ancillary_buf));
 
-		len = ustcomm_recv_unix_sock(sock, &lum, sizeof(lum));
+		/*
+		 * Application command socket: never shutdown on error.
+		 * Applications close the socket when reaching a quiescent state.
+		 */
+		len = ustcomm_recv_unix_sock(&usock, &lum, sizeof(lum));
 		switch (len) {
 		case 0:	/* orderly shutdown */
 			DBG("%s lttng-sessiond has performed an orderly shutdown", sock_info->name);

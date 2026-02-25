@@ -268,6 +268,27 @@ lttng_ust_static_assert(sizeof(struct ustcomm_notify_channel_reply) == USTCOMM_N
  * struct lttng_ust_field_iter field.
  */
 
+/*
+ * Shutdown behavior on error for ustcomm socket functions.
+ */
+enum ustcomm_shutdown {
+	USTCOMM_SHUTDOWN_NONE,
+	USTCOMM_SHUTDOWN_RD,
+	USTCOMM_SHUTDOWN_WR,
+	USTCOMM_SHUTDOWN_RDWR,
+};
+
+/*
+ * fd: The file descriptor on which I/O operations are made.
+ *
+ * shutdown_on_error: Shutdown behavior when an error is detected during an I/O
+ * operation.
+ */
+struct ustcomm_sock {
+	int fd;
+	enum ustcomm_shutdown shutdown_on_error;
+};
+
 int ustcomm_create_unix_sock(const char *pathname)
 	__attribute__((visibility("hidden")));
 
@@ -281,41 +302,48 @@ int ustcomm_accept_unix_sock(int sock)
 int ustcomm_listen_unix_sock(int sock)
 	__attribute__((visibility("hidden")));
 
-int ustcomm_shutdown_unix_sock(int sock)
+int ustcomm_shutdown_unix_sock(const struct ustcomm_sock *sock)
 	__attribute__((visibility("hidden")));
 
 int ustcomm_close_unix_sock(int sock)
 	__attribute__((visibility("hidden")));
 
-ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
+ssize_t ustcomm_recv_unix_sock(const struct ustcomm_sock *sock,
+			void *buf, size_t len)
 	__attribute__((visibility("hidden")));
 
-ssize_t ustcomm_sendv_unix_sock(int sock, const struct iovec *iov, int iovcnt)
+ssize_t ustcomm_sendv_unix_sock(const struct ustcomm_sock *sock,
+	const struct iovec *iov, int iovcnt)
 	__attribute__((visibility("hidden")));
 
-ssize_t ustcomm_send_unix_sock(int sock, const void *buf, size_t len)
+ssize_t ustcomm_send_unix_sock(const struct ustcomm_sock *sock,
+	const void *buf, size_t len)
 	__attribute__((visibility("hidden")));
 
-ssize_t ustcomm_send_fds_unix_sock(int sock, int *fds, size_t nb_fd)
+ssize_t ustcomm_send_fds_unix_sock(const struct ustcomm_sock *sock,
+				int *fds, size_t nb_fd)
 	__attribute__((visibility("hidden")));
 
-ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
+ssize_t ustcomm_recv_fds_unix_sock(const struct ustcomm_sock *sock,
+				int *fds, size_t nb_fd)
 	__attribute__((visibility("hidden")));
 
 const char *ustcomm_get_readable_code(int code)
 	__attribute__((visibility("hidden")));
 
 
-int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg_header *lum,
+int ustcomm_send_app_msg(const struct ustcomm_sock *sock,
+			struct ustcomm_ust_msg_header *lum,
 			struct iovec *iov, int iovcnt,
 			const int *fds, size_t fds_cnt)
 	__attribute__((visibility("hidden")));
 
-int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
-	uint32_t expected_handle, uint32_t expected_cmd)
+int ustcomm_recv_app_reply(const struct ustcomm_sock *sock,
+			struct ustcomm_ust_reply *lur,
+			uint32_t expected_handle, uint32_t expected_cmd)
 	__attribute__((visibility("hidden")));
 
-int ustcomm_send_app_cmd(int sock,
+int ustcomm_send_app_cmd(const struct ustcomm_sock *sock,
 		struct ustcomm_ust_msg_header *lum,
 		struct ustcomm_ust_reply *lur)
 	__attribute__((visibility("hidden")));
@@ -337,12 +365,11 @@ ssize_t ustcomm_recv_event_notifier_notif_fd_from_sessiond(int sock,
 int ustcomm_recv_counter_shm_from_sessiond(int sock,
 		int *shm_fd)
 	__attribute__((visibility("hidden")));
-
 /*
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
-int ustcomm_send_reg_msg(int sock,
+int ustcomm_send_reg_msg(const struct ustcomm_sock *sock,
 		enum lttng_ust_ctl_socket_type type,
 		uint32_t bits_per_long,
 		uint32_t uint8_t_alignment,
@@ -357,7 +384,7 @@ int ustcomm_send_reg_msg(int sock,
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
-int ustcomm_register_event(int sock,
+int ustcomm_register_event(const struct ustcomm_sock *sock,
 	struct lttng_ust_session *session,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
@@ -376,7 +403,7 @@ int ustcomm_register_event(int sock,
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
-int ustcomm_register_key(int sock,
+int ustcomm_register_key(const struct ustcomm_sock *sock,
 	int session_objd,		/* session descriptor */
 	int map_objd,			/* map descriptor */
 	uint32_t dimension,
@@ -391,7 +418,7 @@ int ustcomm_register_key(int sock,
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
-int ustcomm_register_enum(int sock,
+int ustcomm_register_enum(const struct ustcomm_sock *sock,
 	int session_objd,		/* session descriptor */
 	const char *enum_name,		/* enum name (input) */
 	size_t nr_entries,		/* entries */
@@ -403,7 +430,7 @@ int ustcomm_register_enum(int sock,
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
-int ustcomm_register_channel(int sock,
+int ustcomm_register_channel(const struct ustcomm_sock *sock,
 	struct lttng_ust_session *session,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
