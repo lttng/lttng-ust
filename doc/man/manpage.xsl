@@ -3,7 +3,7 @@
 <!--
 SPDX-FileCopyrightText: 2017 Philippe Proulx <pproulx@efficios.com>
 
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 <xsl:stylesheet version="1.0"

@@ -1,7 +1,7 @@
 <!--
 SPDX-FileCopyrightText: 2013 David Goulet <dgoulet@efficios.com>
 
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 Type `make` to compile and use `./run` to start the example.

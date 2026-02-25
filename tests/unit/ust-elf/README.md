@@ -1,7 +1,7 @@
 <!--
 SPDX-FileCopyrightText: 2016 Antoine Busque <abusque@efficios.com>
 
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 # lttng\_ust\_elf unit tests

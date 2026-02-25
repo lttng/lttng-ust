@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2014 Christian Babeux <christian.babeux@efficios.com>
 SPDX-FileCopyrightText: 2015 Alexandre Montplaisir <alexmonthy@efficios.com>
 SPDX-FileCopyrightText: 2022 Michael Jeanson <mjeanson@efficios.com>
 
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 # Using the Java agent

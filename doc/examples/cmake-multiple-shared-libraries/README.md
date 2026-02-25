@@ -1,7 +1,7 @@
 <!--
 SPDX-FileCopyrightText: 2016 Sebastien Boisvert <sboisvert@gydle.com>
 
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 This examples shows how to use LTTng-UST in a project that uses

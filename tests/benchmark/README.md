@@ -1,7 +1,7 @@
 <!--
 SPDX-FileCopyrightText: 2013 Zifei Tong <soariez@gmail.com>
 
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 To run the benchmark:

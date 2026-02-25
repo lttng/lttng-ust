@@ -1,7 +1,7 @@
 <!--
 SPDX-FileCopyrightText: 2023 EfficiOS, Inc.
 
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 To build the examples from the source tree, the `BUILD_EXAMPLES_FROM_TREE`

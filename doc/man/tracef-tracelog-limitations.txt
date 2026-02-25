@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2016 Philippe Proulx <pproulx@efficios.com>
-// SPDX-License-Identifier: CC-BY-4.0
+// SPDX-License-Identifier: CC-BY-SA-4.0
 //
 :macro-name: lttng_ust_{macro-suffix}
 :vmacro-name: lttng_ust_v{macro-suffix}

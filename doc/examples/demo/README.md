@@ -1,7 +1,7 @@
 <!--
 SPDX-FileCopyrightText: 2013 Jérémie Galarneau <jeremie.galarneau@efficios.com>
 
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 This is a demo application used to test the LTTng userspace tracer.

@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2011-2025 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
 #
-# SPDX-License-Identifier: CC-BY-4.0
+# SPDX-License-Identifier: CC-BY-SA-4.0
 
 2025-04-16 (National Wear Your Pajamas to Work Day) lttng-ust 2.14.0-rc1
 	* Fix release description
