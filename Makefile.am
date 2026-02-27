@@ -18,7 +18,6 @@ dist_doc_DATA = \
 	README.md
 
 dist_noinst_DATA = \
-	.reuse/dep5 \
 	CodingStyle.md \
 	CONTRIBUTING.md \
 	LICENSES/Autoconf-exception-2.0.txt \

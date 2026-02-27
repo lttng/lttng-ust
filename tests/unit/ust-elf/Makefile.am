@@ -16,4 +16,5 @@ dist_check_SCRIPTS = test_ust_elf
 # Directories added to EXTRA_DIST will be recursively copied to the distribution.
 EXTRA_DIST = \
 	$(srcdir)/data \
-	README.md
+	README.md \
+	REUSE.toml

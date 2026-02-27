@@ -1,0 +1,7 @@
+version = 1
+
+[[annotations]]
+path = ["2.*/**", "empty/**"]
+precedence = "closest"
+SPDX-FileCopyrightText = "2023 EfficiOS, Inc."
+SPDX-License-Identifier = "CC0-1.0"
