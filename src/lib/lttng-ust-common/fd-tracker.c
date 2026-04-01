@@ -14,7 +14,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/select.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <fcntl.h>
@@ -22,6 +21,7 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <urcu/compiler.h>
+#include <urcu/hlist.h>
 #include <urcu/tls-compat.h>
 #include <urcu/system.h>
 
@@ -33,24 +33,21 @@
 
 #include "lib/lttng-ust-common/fd-tracker.h"
 
-/* Operations on the fd set. */
-#define IS_FD_VALID(fd)			((fd) >= 0 && (fd) < lttng_ust_max_fd)
-#define GET_FD_SET_FOR_FD(fd, fd_sets)	(&((fd_sets)[(fd) / FD_SETSIZE]))
-#define CALC_INDEX_TO_SET(fd)		((fd) % FD_SETSIZE)
-#define IS_FD_STD(fd)			(IS_FD_VALID(fd) && (fd) <= STDERR_FILENO)
+/* Hash table for tracking fds used by lttng-ust. */
+#define FD_TRACKER_HT_BITS	10U
+#define FD_TRACKER_HT_SIZE	(1U << FD_TRACKER_HT_BITS)
 
-/* Check fd validity before calling these. */
-#define ADD_FD_TO_SET(fd, fd_sets)	\
-		FD_SET(CALC_INDEX_TO_SET(fd), GET_FD_SET_FOR_FD(fd, fd_sets))
-#define IS_FD_SET(fd, fd_sets)		\
-		FD_ISSET(CALC_INDEX_TO_SET(fd), GET_FD_SET_FOR_FD(fd, fd_sets))
-#define DEL_FD_FROM_SET(fd, fd_sets)	\
-		FD_CLR(CALC_INDEX_TO_SET(fd), GET_FD_SET_FOR_FD(fd, fd_sets))
+#define IS_FD_STD(fd)		((fd) >= 0 && (fd) <= STDERR_FILENO)
+
+struct lttng_fd_entry {
+	struct cds_hlist_node hlist;
+	int fd;
+};
 
 /*
- * Protect the lttng_fd_set. Nests within the ust_lock, and therefore
- * within the libc dl lock. Therefore, we need to allocate the TLS before
- * nesting into this lock.
+ * Protect fd_tracker_ht. Nests within the ust_lock, and therefore within the
+ * libc dl lock. Therefore, we need to allocate the TLS before nesting into this
+ * lock.
  *
  * The ust_safe_guard_fd_mutex nests within the ust_mutex. This mutex
  * is also held across fork.
@@ -65,11 +62,39 @@ static pthread_mutex_t ust_safe_guard_fd_mutex = PTHREAD_MUTEX_INITIALIZER;
  */
 static DEFINE_URCU_TLS(int, ust_fd_mutex_nest);
 
-/* fd_set used to book keep fd being used by lttng-ust. */
-static fd_set *lttng_fd_set;
-static int lttng_ust_max_fd;
-static int num_fd_sets;
+/* Hash table used to book keep fd being used by lttng-ust. */
+static struct cds_hlist_head fd_tracker_ht[FD_TRACKER_HT_SIZE];
+static unsigned int lttng_ust_max_fd;
 static int init_done;
+
+static inline struct cds_hlist_head *fd_tracker_get_bucket(int fd)
+{
+	return &fd_tracker_ht[(unsigned int) fd % FD_TRACKER_HT_SIZE];
+}
+
+static struct lttng_fd_entry *fd_tracker_lookup(int fd)
+{
+	const struct cds_hlist_head *head;
+	const struct cds_hlist_node *node;
+	struct lttng_fd_entry *entry;
+
+	if (caa_unlikely(fd < 0))
+		return NULL;
+
+	head = fd_tracker_get_bucket(fd);
+
+	cds_hlist_for_each_entry(entry, node, head, hlist) {
+		if (entry->fd == fd)
+			return entry;
+	}
+
+	return NULL;
+}
+
+static inline bool fd_tracker_is_fd_tracked(int fd)
+{
+	return fd_tracker_lookup(fd) != NULL;
+}
 
 /*
  * Force a read (imply TLS allocation for dlopen) of TLS variables.
@@ -80,41 +105,43 @@ void lttng_ust_fd_tracker_alloc_tls(void)
 }
 
 /*
- * Allocate the fd set array based on the hard limit set for this
- * process. This will be called during the constructor execution
+ * Initialize the fd tracker hash table.
+ * This will be called during the constructor execution
  * and will also be called in the child after fork via lttng_ust_init.
  */
 void lttng_ust_fd_tracker_init(void)
 {
-	struct rlimit rlim;
-	int i;
+	size_t i;
 
 	if (CMM_LOAD_SHARED(init_done))
 		return;
 
-	memset(&rlim, 0, sizeof(rlim));
-	/* Get the current possible max number of fd for this process. */
-	if (getrlimit(RLIMIT_NOFILE, &rlim) < 0)
-		abort();
-	/*
-	 * FD set array size determined using the hard limit. Even if
-	 * the process wishes to increase its limit using setrlimit, it
-	 * can only do so with the softlimit which will be less than the
-	 * hard limit.
-	 */
-	lttng_ust_max_fd = rlim.rlim_max;
-	num_fd_sets = lttng_ust_max_fd / FD_SETSIZE;
-	if (lttng_ust_max_fd % FD_SETSIZE)
-		++num_fd_sets;
-	if (lttng_fd_set != NULL) {
-		free(lttng_fd_set);
-		lttng_fd_set = NULL;
+
+	if (!lttng_ust_max_fd) {
+		struct rlimit rlim;
+
+		if (getrlimit(RLIMIT_NOFILE, &rlim) < 0)
+			abort();
+
+		lttng_ust_max_fd = rlim.rlim_max;
 	}
-	lttng_fd_set = malloc(num_fd_sets * (sizeof(fd_set)));
-	if (!lttng_fd_set)
-		abort();
-	for (i = 0; i < num_fd_sets; i++)
-		FD_ZERO((&lttng_fd_set[i]));
+
+	for (i = 0; i < FD_TRACKER_HT_SIZE; ++i) {
+		struct cds_hlist_head *head;
+		struct cds_hlist_node *node, *tmp;
+		struct lttng_fd_entry *entry;
+
+		head = &fd_tracker_ht[i];
+
+		/* Clear any existing entries (can happen after fork). */
+		cds_hlist_for_each_entry_safe(entry, node, tmp, head, hlist) {
+			cds_hlist_del(&entry->hlist);
+			free(entry);
+		}
+
+		CDS_INIT_HLIST_HEAD(head);
+	}
+
 	CMM_STORE_SHARED(init_done, 1);
 }
 
@@ -238,6 +265,14 @@ error:
 	return ret;
 }
 
+static void fd_tracker_add(struct lttng_fd_entry *entry)
+{
+	struct cds_hlist_head *head;
+
+	head = fd_tracker_get_bucket(entry->fd);
+	cds_hlist_add_head(&entry->hlist, head);
+}
+
 /*
  * Needs to be called with ust_safe_guard_fd_mutex held when opening the fd.
  * Has strict checking of fd validity.
@@ -253,7 +288,11 @@ error:
  */
 int lttng_ust_add_fd_to_tracker(int fd)
 {
-	int ret;
+	struct lttng_fd_entry *entry = NULL;
+
+	if (caa_unlikely(fd < 0))
+		return -EBADF;
+
 	/*
 	 * Ensure the tracker is initialized when called from
 	 * constructors.
@@ -261,23 +300,32 @@ int lttng_ust_add_fd_to_tracker(int fd)
 	lttng_ust_fd_tracker_init();
 	assert(URCU_TLS(ust_fd_mutex_nest));
 
+	entry = zmalloc(sizeof(*entry));
+	if (!entry)
+		return -ENOMEM;
+
 	if (IS_FD_STD(fd)) {
-		ret = dup_std_fd(fd);
-		if (ret < 0) {
-			goto error;
+		fd = dup_std_fd(fd);
+		if (fd < 0) {
+			free(entry);
+			goto end;
 		}
-		fd = ret;
 	}
 
-	/* Trying to add an fd which we can not accommodate. */
-	assert(IS_FD_VALID(fd));
 	/* Setting an fd that's already set. */
-	assert(!IS_FD_SET(fd, lttng_fd_set));
+	assert(!fd_tracker_is_fd_tracked(fd));
 
-	ADD_FD_TO_SET(fd, lttng_fd_set);
+	entry->fd = fd;
+
+	fd_tracker_add(entry);
+end:
 	return fd;
-error:
-	return ret;
+}
+
+static void fd_tracker_delete(struct lttng_fd_entry *entry)
+{
+	cds_hlist_del(&entry->hlist);
+	free(entry);
 }
 
 /*
@@ -286,6 +334,8 @@ error:
  */
 void lttng_ust_delete_fd_from_tracker(int fd)
 {
+	struct lttng_fd_entry *entry;
+
 	/*
 	 * Ensure the tracker is initialized when called from
 	 * constructors.
@@ -293,12 +343,11 @@ void lttng_ust_delete_fd_from_tracker(int fd)
 	lttng_ust_fd_tracker_init();
 
 	assert(URCU_TLS(ust_fd_mutex_nest));
-	/* Not a valid fd. */
-	assert(IS_FD_VALID(fd));
 	/* Deleting an fd which was not set. */
-	assert(IS_FD_SET(fd, lttng_fd_set));
+	entry = fd_tracker_lookup(fd);
+	assert(entry);
 
-	DEL_FD_FROM_SET(fd, lttng_fd_set);
+	fd_tracker_delete(entry);
 }
 
 /*
@@ -326,7 +375,7 @@ int lttng_ust_safe_close_fd(int fd, int (*close_cb)(int fd))
 		return close_cb(fd);
 
 	lttng_ust_lock_fd_tracker();
-	if (IS_FD_VALID(fd) && IS_FD_SET(fd, lttng_fd_set)) {
+	if (fd_tracker_is_fd_tracked(fd)) {
 		ret = -1;
 		errno = EBADF;
 	} else {
@@ -364,7 +413,7 @@ int lttng_ust_safe_fclose_stream(FILE *stream, int (*fclose_cb)(FILE *stream))
 	fd = fileno(stream);
 
 	lttng_ust_lock_fd_tracker();
-	if (IS_FD_VALID(fd) && IS_FD_SET(fd, lttng_fd_set)) {
+	if (fd_tracker_is_fd_tracked(fd)) {
 		ret = -1;
 		errno = EBADF;
 	} else {
@@ -399,7 +448,7 @@ static int test_close_success(const int *p __attribute__((unused)))
  */
 int lttng_ust_safe_closefrom_fd(int lowfd, int (*close_cb)(int fd))
 {
-	int ret = 0, close_success = 0, i;
+	int ret = 0, close_success = 0;
 
 	lttng_ust_fd_tracker_alloc_tls();
 
@@ -422,7 +471,7 @@ int lttng_ust_safe_closefrom_fd(int lowfd, int (*close_cb)(int fd))
 	 * validating whether the FD is part of the tracked set.
 	 */
 	if (URCU_TLS(ust_fd_mutex_nest)) {
-		for (i = lowfd; i < lttng_ust_max_fd; i++) {
+		for (unsigned int i = lowfd; i < lttng_ust_max_fd; i++) {
 			if (close_cb(i) < 0) {
 				switch (errno) {
 				case EBADF:
@@ -437,8 +486,8 @@ int lttng_ust_safe_closefrom_fd(int lowfd, int (*close_cb)(int fd))
 		}
 	} else {
 		lttng_ust_lock_fd_tracker();
-		for (i = lowfd; i < lttng_ust_max_fd; i++) {
-			if (IS_FD_VALID(i) && IS_FD_SET(i, lttng_fd_set))
+		for (unsigned int i = lowfd; i < lttng_ust_max_fd; i++) {
+			if (fd_tracker_is_fd_tracked(i))
 				continue;
 			if (close_cb(i) < 0) {
 				switch (errno) {
@@ -473,7 +522,7 @@ end:
 int lttng_ust_safe_close_range_fd(unsigned int first, unsigned int last, int flags,
 		int (*close_range_cb)(unsigned int first, unsigned int last, int flags))
 {
-	int ret = 0, i;
+	int ret = 0;
 
 	lttng_ust_fd_tracker_alloc_tls();
 
@@ -498,13 +547,13 @@ int lttng_ust_safe_close_range_fd(unsigned int first, unsigned int last, int fla
 			goto end;
 		}
 	} else {
-		int last_check = last;
+		unsigned int last_check = min_t(unsigned int,
+						last,
+						lttng_ust_max_fd);
 
-		if (last > lttng_ust_max_fd)
-			last_check = lttng_ust_max_fd;
 		lttng_ust_lock_fd_tracker();
-		for (i = first; i <= last_check; i++) {
-			if (IS_FD_VALID(i) && IS_FD_SET(i, lttng_fd_set))
+		for (unsigned int i = first; i <= last_check; i++) {
+			if (fd_tracker_is_fd_tracked(i))
 				continue;
 			if (close_range_cb(i, i, flags) < 0) {
 				ret = -1;
