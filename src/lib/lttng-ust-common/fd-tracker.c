@@ -64,6 +64,7 @@ static DEFINE_URCU_TLS(int, ust_fd_mutex_nest);
 
 /* Hash table used to book keep fd being used by lttng-ust. */
 static struct cds_hlist_head fd_tracker_ht[FD_TRACKER_HT_SIZE];
+static unsigned int fd_tracker_current_count;
 static unsigned int lttng_ust_max_fd;
 static int init_done;
 
@@ -141,6 +142,8 @@ void lttng_ust_fd_tracker_init(void)
 
 		CDS_INIT_HLIST_HEAD(head);
 	}
+
+	fd_tracker_current_count = 0;
 
 	CMM_STORE_SHARED(init_done, 1);
 }
@@ -271,6 +274,8 @@ static void fd_tracker_add(struct lttng_fd_entry *entry)
 
 	head = fd_tracker_get_bucket(entry->fd);
 	cds_hlist_add_head(&entry->hlist, head);
+
+	fd_tracker_current_count++;
 }
 
 /*
@@ -326,6 +331,7 @@ static void fd_tracker_delete(struct lttng_fd_entry *entry)
 {
 	cds_hlist_del(&entry->hlist);
 	free(entry);
+	fd_tracker_current_count--;
 }
 
 /*
@@ -517,12 +523,70 @@ end:
 }
 
 /*
+ * Must be called with tracker mutex held.
+ * On success, caller must free *all_tracked_fds_out.
+ */
+static int collect_all_tracked_fds(int **all_tracked_fds_out, unsigned int *count_out)
+{
+	int *array;
+	unsigned int i;
+
+	if (fd_tracker_current_count == 0) {
+		*all_tracked_fds_out = NULL;
+		*count_out = 0;
+		return 0;
+	}
+
+	array = malloc(fd_tracker_current_count * sizeof(int));
+	if (!array)
+		return ENOMEM;
+
+	i = 0;
+	for (unsigned int bucket_i = 0; bucket_i < FD_TRACKER_HT_SIZE; ++bucket_i) {
+		const struct cds_hlist_head *head = &fd_tracker_ht[bucket_i];
+		const struct cds_hlist_node *node;
+		const struct lttng_fd_entry *entry;
+
+		cds_hlist_for_each_entry(entry, node, head, hlist) {
+			assert(i < fd_tracker_current_count);
+			array[i++] = entry->fd;
+		}
+	}
+
+	assert(i == fd_tracker_current_count);
+
+	*all_tracked_fds_out = array;
+	*count_out = i;
+
+	return 0;
+}
+
+static int cmp_fd(const void *raw_fd_1, const void *raw_fd_2)
+{
+	int fd_1 = *(const int *)raw_fd_1;
+	int fd_2 = *(const int *)raw_fd_2;
+
+	if (fd_1 < fd_2)
+		return -1;
+	if (fd_1 > fd_2)
+		return 1;
+	return 0;
+}
+
+/*
  * Implement helper for close_range() override.
+ *
+ * Uses the sorted array of tracked FDs to splice the range into multiple
+ * close_range() calls, skipping over tracked FDs. This avoids calling
+ * close_range() one FD at a time.
  */
 int lttng_ust_safe_close_range_fd(unsigned int first, unsigned int last, int flags,
 		int (*close_range_cb)(unsigned int first, unsigned int last, int flags))
 {
-	int ret = 0;
+	int err;
+	int *all_tracked_fds;
+	unsigned int count;
+	unsigned int range_start;
 
 	lttng_ust_fd_tracker_alloc_tls();
 
@@ -533,9 +597,7 @@ int lttng_ust_safe_close_range_fd(unsigned int first, unsigned int last, int fla
 	lttng_ust_fd_tracker_init();
 
 	if (first > last || last > INT_MAX) {
-		ret = -1;
-		errno = EINVAL;
-		goto end;
+		return EINVAL;
 	}
 	/*
 	 * If called from lttng-ust, we directly call close_range
@@ -543,34 +605,58 @@ int lttng_ust_safe_close_range_fd(unsigned int first, unsigned int last, int fla
 	 */
 	if (URCU_TLS(ust_fd_mutex_nest)) {
 		if (close_range_cb(first, last, flags) < 0) {
-			ret = -1;
-			goto end;
+			return errno;
 		}
-	} else {
-		unsigned int last_check = min_t(unsigned int,
-						last,
-						lttng_ust_max_fd);
 
-		lttng_ust_lock_fd_tracker();
-		for (unsigned int i = first; i <= last_check; i++) {
-			if (fd_tracker_is_fd_tracked(i))
-				continue;
-			if (close_range_cb(i, i, flags) < 0) {
-				ret = -1;
-				/* propagate errno from close_range_cb. */
-				lttng_ust_unlock_fd_tracker();
-				goto end;
-			}
-		}
-		if (last > lttng_ust_max_fd) {
-			if (close_range_cb(lttng_ust_max_fd + 1, last, flags) < 0) {
-				ret = -1;
-				lttng_ust_unlock_fd_tracker();
-				goto end;
-			}
-		}
-		lttng_ust_unlock_fd_tracker();
+		return 0;
 	}
-end:
-	return ret;
+
+	lttng_ust_lock_fd_tracker();
+
+	err = collect_all_tracked_fds(&all_tracked_fds, &count);
+	if (err)
+		goto bad_alloc;
+
+	if (count > 0)
+		qsort(all_tracked_fds, count, sizeof(int), cmp_fd);
+
+	/*
+	 * Iterate through the sorted tracked FDs and call close_range()
+	 * for each gap between them.
+	 */
+	range_start = first;
+	for (unsigned int i = 0; i < count; i++) {
+		unsigned int tracked_fd = (unsigned int)all_tracked_fds[i];
+
+		if (tracked_fd < first)
+			continue;
+
+		if (tracked_fd > last)
+			break;
+
+		/* Close the range before this tracked FD. */
+		if (range_start < tracked_fd) {
+			if (close_range_cb(range_start, tracked_fd - 1, flags) < 0) {
+				err = errno;
+				goto out;
+			}
+		}
+		/* Move past this tracked FD. */
+		range_start = tracked_fd + 1;
+	}
+
+	/* Close any remaining range after the last tracked FD. */
+	err = 0;
+	if (range_start <= last) {
+		if (close_range_cb(range_start, last, flags) < 0) {
+			err = errno;
+		}
+	}
+
+out:
+	free(all_tracked_fds);
+bad_alloc:
+	lttng_ust_unlock_fd_tracker();
+
+	return err;
 }
