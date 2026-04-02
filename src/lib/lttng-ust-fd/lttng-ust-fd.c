@@ -164,6 +164,10 @@ int close_range(unsigned int first, unsigned int last, int flags);
  */
 int close_range(unsigned int first, unsigned int last, int flags)
 {
+	int err, old_errno;
+
+	old_errno = errno;
+
 	/*
 	 * We can't retry dlsym here since close is async-signal-safe.
 	 */
@@ -172,7 +176,16 @@ int close_range(unsigned int first, unsigned int last, int flags)
 		return -1;
 	}
 
-	return lttng_ust_safe_close_range_fd(first, last, flags, __lttng_ust_fd_plibc_close_range);
+	err = lttng_ust_safe_close_range_fd(first, last, flags, __lttng_ust_fd_plibc_close_range);
+
+	if (err) {
+		errno = err;
+		return -1;
+	}
+
+	errno = old_errno;
+
+	return 0;
 }
 
 #if defined(__sun__) || defined(__FreeBSD__)
