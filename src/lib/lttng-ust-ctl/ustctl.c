@@ -1268,6 +1268,9 @@ error_alloc:
 int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 				struct lttng_ust_abi_object_data *channel_data)
 {
+	if (!channel_data)
+		return -EINVAL;
+
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
 	DEFINE_ZEROED(struct lttng_ust_abi_channel, channel);
@@ -1286,9 +1289,6 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 	int fds[] = {
 		channel_data->type.channel.wakeup_fd,
 	};
-
-	if (!channel_data)
-		return -EINVAL;
 
 	channel.len = channel_data->header.size;
 	channel.type = channel_data->type.channel.type;
@@ -4543,6 +4543,9 @@ void lttng_ust_ctl_destroy_counter(struct lttng_ust_ctl_daemon_counter *counter)
 int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 		struct lttng_ust_abi_object_data *counter_data)
 {
+	if (!counter_data)
+		return -EINVAL;
+
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
 	struct iovec iov[] = {
@@ -4552,9 +4555,6 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 		},
 	};
 	int ret;
-
-	if (!counter_data)
-		return -EINVAL;
 
 	lum.handle = parent_handle;
 	lum.cmd = LTTNG_UST_ABI_COUNTER;
@@ -4585,6 +4585,9 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data *counter_channel_data)
 {
+	if (!counter_data || !counter_channel_data)
+		return -EINVAL;
+
 	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
 	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
 	DEFINE_ZEROED(struct lttng_ust_abi_counter_channel, counter_channel);
@@ -4598,9 +4601,6 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 		counter_channel_data->type.counter_channel.shm_fd,
 	};
 	int ret;
-
-	if (!counter_data || !counter_channel_data)
-		return -EINVAL;
 
 	counter_channel.len = sizeof(struct lttng_ust_abi_counter_channel);
 	counter_channel.shm_len = counter_channel_data->header.size;
