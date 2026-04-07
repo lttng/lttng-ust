@@ -854,6 +854,7 @@ void lib_ring_buffer_channel_read_timer_start(struct lttng_ust_ring_buffer_chann
 
 	lib_ring_buffer_setup_timer_thread();
 
+	memset(&sev, 0, sizeof(sev));
 	sev.sigev_notify = SIGEV_SIGNAL;
 	sev.sigev_signo = LTTNG_UST_RB_SIG_READ;
 	sev.sigev_value.sival_ptr = chan;
