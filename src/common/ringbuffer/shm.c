@@ -40,7 +40,7 @@ static
 int zero_file(int fd, size_t len)
 {
 	ssize_t retlen;
-	size_t written = 0;
+	size_t left = len;
 	char *zeropage;
 	long pagelen;
 	int ret;
@@ -52,16 +52,16 @@ int zero_file(int fd, size_t len)
 	if (!zeropage)
 		return -ENOMEM;
 
-	while (len > written) {
+	while (left) {
 		do {
 			retlen = write(fd, zeropage,
-				min_t(size_t, pagelen, len - written));
+				min_t(size_t, pagelen, left));
 		} while (retlen == -1UL && errno == EINTR);
 		if (retlen < 0) {
 			ret = (int) retlen;
 			goto error;
 		}
-		written += retlen;
+		left -= retlen;
 	}
 	ret = 0;
 error:
