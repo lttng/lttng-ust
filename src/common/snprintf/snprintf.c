@@ -23,7 +23,7 @@ int ust_safe_vsnprintf(char *str, size_t n, const char *fmt, va_list ap)
 {
 	int ret;
 	char dummy[DUMMY_LEN];
-	LTTNG_UST_LFILE f;
+	LTTNG_UST_LFILE f = { 0 };
 	struct __lttng_ust_sfileext fext;
 
 	/* While snprintf(3) specifies size_t stdio uses an int internally */
