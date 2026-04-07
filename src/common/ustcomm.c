@@ -718,6 +718,7 @@ int ustcomm_recv_app_reply(const struct ustcomm_sock *sock,
 	default:
 		if (len >= 0) {
 			ERR("incorrect message size: %zd\n", len);
+			return -EIO;
 		}
 		return len;
 	}
@@ -1513,7 +1514,7 @@ int ustcomm_register_event(const struct ustcomm_sock *sock,
 			return len;
 		} else {
 			ERR("incorrect message size: %zd\n", len);
-			return len;
+			return -EIO;
 		}
 	}
 	/* Unreached. */
@@ -1621,7 +1622,7 @@ int ustcomm_register_key(const struct ustcomm_sock *sock,
 			return len;
 		} else {
 			ERR("incorrect message size: %zd\n", len);
-			return len;
+			return -EIO;
 		}
 	}
 	/* Unreached. */
@@ -1727,7 +1728,7 @@ int ustcomm_register_enum(const struct ustcomm_sock *sock,
 			return len;
 		} else {
 			ERR("incorrect message size: %zd\n", len);
-			return len;
+			return -EIO;
 		}
 	}
 	return ret;
@@ -1840,7 +1841,7 @@ int ustcomm_register_channel(const struct ustcomm_sock *sock,
 			return len;
 		} else {
 			ERR("incorrect message size: %zd\n", len);
-			return len;
+			return -EIO;
 		}
 	}
 }
