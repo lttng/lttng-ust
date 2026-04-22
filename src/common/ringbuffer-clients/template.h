@@ -692,7 +692,11 @@ static int client_packet_initialize(struct lttng_ust_ring_buffer *buf,
 	packet_header->magic = CTF_MAGIC_NUMBER;
 	memcpy(packet_header->uuid, lttng_chan_buf->priv->uuid, sizeof(lttng_chan_buf->priv->uuid));
 	packet_header->stream_id = lttng_chan_buf->priv->id;
+#ifdef RING_BUFFER_CLIENT_HAS_CPU_ID
 	packet_header->stream_instance_id = buf->backend.cpu;
+#else
+	packet_header->stream_instance_id = 0;
+#endif
 	packet_header->ctx.timestamp_begin = timestamp_begin;
 	packet_header->ctx.timestamp_end = timestamp_end;
 	packet_header->ctx.content_size = client_packet_header_size() * CHAR_BIT;
