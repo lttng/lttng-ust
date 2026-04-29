@@ -39,15 +39,17 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_ring_buffer_config *
 				     struct lttng_ust_shm_handle *handle,
 				     struct shm_object *shmobj)
 {
+	struct lttng_ust_ring_buffer_channel *chan;
 	struct channel_backend *chanb;
 	unsigned long subbuf_size, mmap_offset = 0;
 	unsigned long num_subbuf_alloc;
 	unsigned long i;
 	long page_size;
 
-	chanb = &shmp(handle, bufb->chan)->backend;
-	if (!chanb)
+	chan = shmp(handle, bufb->chan);
+	if (!chan)
 		return -EINVAL;
+	chanb = &chan->backend;
 
 	subbuf_size = chanb->subbuf_size;
 	num_subbuf_alloc = num_subbuf;
