@@ -2504,7 +2504,7 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_ring_buffer_ctx *ctx,
 		if (caa_unlikely(ret))
 			return ret;
 
-		if (caa_unlikely(lib_ring_buffer_try_take_subbuf_ownership(
+		if (caa_unlikely(lib_ring_buffer_try_take_subbuf_ownership_slow(
 						config, chan, buf,
 						subbuf_index(offsets.end - 1, chan),
 						handle))) {

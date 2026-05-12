@@ -15,15 +15,35 @@
 #include <urcu/tls-compat.h>
 #include <signal.h>
 #include <stdint.h>
+#include <poll.h>
 #include <pthread.h>
 
 #include <lttng/ust-ringbuffer-context.h>
+#include "common/smp.h"
 #include "common/testpoint.h"
 #include "ringbuffer-config.h"
 #include "backend_types.h"
 #include "backend_internal.h"
 #include "frontend_types.h"
 #include "shm.h"
+
+/* Max spinloop retries when taking ownership of a per-channel sub-buffer. */
+#define PER_CHANNEL_OWNERSHIP_SPIN_RETRY_MAX	100
+
+/*
+ * Sleep duration in milliseconds for each poll()-based retry iteration.
+ */
+#define OWNERSHIP_POLL_SLEEP_MS			1
+
+/*
+ * Max number of poll()-based retry iterations after spin retries are exhausted
+ * for per-channel sub-buffer.
+ *
+ * The total polling time (ms) is:
+ *   PER_CHANNEL_OWNERSHIP_POLL_RETRY_MAX * OWNERSHIP_POLL_SLEEP_MS
+ */
+#define PER_CHANNEL_OWNERSHIP_POLL_RETRY_MAX		10
+
 
 /* Buffer offset macros */
 
@@ -518,6 +538,79 @@ int lib_ring_buffer_try_take_subbuf_ownership(const struct lttng_ust_ring_buffer
 	}
 
 	return 0;
+}
+
+static inline
+unsigned int max_ownership_spin_loop_retry(
+	const struct lttng_ust_ring_buffer_config *config)
+{
+	if (config->alloc == RING_BUFFER_ALLOC_PER_CHANNEL &&
+			(get_possible_cpus_array_len() > 1))
+		return PER_CHANNEL_OWNERSHIP_SPIN_RETRY_MAX;
+
+	return 0;
+}
+
+static inline
+unsigned int max_ownership_poll_loop_retry(
+	const struct lttng_ust_ring_buffer_config *config)
+{
+	if (config->alloc == RING_BUFFER_ALLOC_PER_CHANNEL)
+		return PER_CHANNEL_OWNERSHIP_POLL_RETRY_MAX;
+
+	return 0;
+}
+
+/**
+ * lib_ring_buffer_try_take_subbuf_ownership_slow - Try to take the ownership of a
+ * sub-buffer, slow path only.
+ *
+ * Rationale: on per-channel buffers with concurrent writers, immediate fallback
+ * to a sub-buffer switch can cause avoidable padding and event loss. This slow
+ * path gives the current owner a short window to release ownership first.
+ *
+ * How it works: after one failed fast attempt, it retries in two phases:
+ * (1) a bounded cpu_relax() spin loop, then (2) a bounded poll()-sleep loop.
+ * If ownership is still not acquired, caller falls back to sub-buffer switch.
+ */
+static inline
+int lib_ring_buffer_try_take_subbuf_ownership_slow(const struct lttng_ust_ring_buffer_config *config,
+						struct lttng_ust_ring_buffer_channel *chan,
+						struct lttng_ust_ring_buffer *buf,
+						unsigned long subbuf_idx,
+						struct lttng_ust_shm_handle *handle)
+{
+
+	if (caa_likely(!lib_ring_buffer_try_take_subbuf_ownership(config, chan, buf, subbuf_idx, handle)))
+		return 0;
+
+	{
+		const unsigned int max_spin_loop_count =
+			max_ownership_spin_loop_retry(config);
+
+		for (unsigned int i = 0; i < max_spin_loop_count; ++i) {
+
+			caa_cpu_relax();
+
+			if (caa_likely(!lib_ring_buffer_try_take_subbuf_ownership(config, chan, buf, subbuf_idx, handle)))
+				return 0;
+		}
+	}
+
+	{
+		const unsigned int max_poll_loop_count =
+			max_ownership_poll_loop_retry(config);
+
+		for (unsigned int i = 0; i < max_poll_loop_count; ++i) {
+
+			if (caa_likely(!lib_ring_buffer_try_take_subbuf_ownership(config, chan, buf, subbuf_idx, handle)))
+				return 0;
+
+			(void) poll(NULL, 0, OWNERSHIP_POLL_SLEEP_MS);
+		}
+	}
+
+	return -1;
 }
 
 static inline
