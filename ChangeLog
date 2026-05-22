@@ -1,6 +1,18 @@
-# SPDX-FileCopyrightText: 2011-2025 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+# SPDX-FileCopyrightText: 2011-2026 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
 #
 # SPDX-License-Identifier: CC-BY-4.0
+
+2026-05-22 lttng-ust 2.14.2
+	* Fix: stream instance id mismatch for populated packets in per-channel ringbuffers
+	* fix: check shmp() return value before dereference
+	* fix: return negative error code on incorrect message size
+	* fix: use decrementing counter in zero_file to avoid underflow warning
+	* fix: initialize LTTNG_UST_LFILE struct in ust_safe_vsnprintf
+	* fix: initialize sigevent struct before timer_create
+	* fix: close_range inefficiency with hash table fd-tracker
+	* fix: excessive memory usage of fd-tracker
+	* doc/examples: add upper bound to minimal CMake version
+	* fix: warning with gcc 15 attribute nonstring
 
 2026-02-13 lttng-ust 2.14.1
 	* Update .gitreview for stable-2.14
