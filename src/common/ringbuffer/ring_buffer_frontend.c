@@ -76,7 +76,11 @@
 #define CLOCKID		CLOCK_MONOTONIC
 #define LTTNG_UST_RING_BUFFER_GET_RETRY		10
 #define LTTNG_UST_RING_BUFFER_RETRY_DELAY_MS	10
-#define RETRY_DELAY_MS				100	/* 100 ms. */
+#define FULL_RETRY_DELAY_MS			100	/* 100 ms. */
+#define WRAP_RETRY_DELAY_MS			1	/* 1 ms. */
+
+/* Retry up to 50ms on buffer wrap around. */
+#define LTTNG_UST_RING_BUFFER_WRAP_AROUND_TIMEOUT_MS	10 /* 10 ms */
 
 /*
  * Non-static to ensure the compiler does not optimize away the xor.
@@ -2247,16 +2251,16 @@ void lib_ring_buffer_switch_slow(struct lttng_ust_ring_buffer *buf, enum switch_
 }
 
 static
-bool handle_blocking_retry(int *timeout_left_ms)
+bool handle_blocking_retry(int *timeout_left_ms, int step_ms)
 {
 	int timeout = *timeout_left_ms, delay;
 
 	if (caa_likely(!timeout))
 		return false;	/* Do not retry, discard event. */
 	if (timeout < 0)	/* Wait forever. */
-		delay = RETRY_DELAY_MS;
+		delay = step_ms;
 	else
-		delay = min_t(int, timeout, RETRY_DELAY_MS);
+		delay = min_t(int, timeout, step_ms);
 	(void) poll(NULL, 0, delay);
 	if (timeout > 0)
 		*timeout_left_ms -= delay;
@@ -2282,6 +2286,7 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_ring_buffer *buf,
 	struct lttng_ust_shm_handle *handle = chan->handle;
 	unsigned long reserve_commit_diff, offset_cmp;
 	int timeout_left_ms = lttng_ust_ringbuffer_get_timeout(chan);
+	int wrap_around_timeout_left_ms = LTTNG_UST_RING_BUFFER_WRAP_AROUND_TIMEOUT_MS;
 
 retry:
 	offsets->begin = offset_cmp = v_read(config, &buf->offset);
@@ -2368,7 +2373,7 @@ retry:
 				>= chan->backend.buf_size)) {
 				unsigned long nr_lost;
 
-				if (handle_blocking_retry(&timeout_left_ms))
+				if (handle_blocking_retry(&timeout_left_ms, FULL_RETRY_DELAY_MS))
 					goto retry;
 
 				/*
@@ -2393,6 +2398,10 @@ retry:
 			}
 		} else {
 			unsigned long nr_lost;
+
+			if (config->alloc == RING_BUFFER_ALLOC_PER_CHANNEL &&
+			    handle_blocking_retry(&wrap_around_timeout_left_ms, WRAP_RETRY_DELAY_MS))
+				goto retry;
 
 			/*
 			 * Next subbuffer reserve offset does not match the
