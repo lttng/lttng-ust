@@ -776,7 +776,6 @@ int lttng_ust_ctl_reply_register_event(int sock,
 	uint32_t id,			/* id (input) */
 	int ret_code);			/* return code. 0 ok, negative error */
 
-#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 /*
  * Returns 0 on success, negative UST or system error value on error.
  */
@@ -812,7 +811,6 @@ int lttng_ust_ctl_reply_register_key(int sock,
 	uint64_t index,			/* Index within dimension (input) */
 	int ret_code);			/* return code. 0 ok, negative error */
 
-#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 /*
  * Returns 0 on success, negative UST or system error value on error.
@@ -900,10 +898,8 @@ struct lttng_ust_ctl_daemon_counter *
 int lttng_ust_ctl_create_counter_data(struct lttng_ust_ctl_daemon_counter *counter,
 		struct lttng_ust_abi_object_data **counter_data);
 
-#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 int lttng_ust_ctl_create_counter_channel_data(struct lttng_ust_ctl_daemon_counter *counter,
 		struct lttng_ust_abi_object_data **counter_channel_data);
-#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 int lttng_ust_ctl_create_counter_cpu_data(struct lttng_ust_ctl_daemon_counter *counter, int cpu,
 		struct lttng_ust_abi_object_data **counter_cpu_data);
 
@@ -915,21 +911,17 @@ void lttng_ust_ctl_destroy_counter(struct lttng_ust_ctl_daemon_counter *counter)
 
 int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 		struct lttng_ust_abi_object_data *counter_data);
-#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data *counter_channel_data);
-#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data *counter_cpu_data);
 
-#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 int lttng_ust_ctl_counter_read(struct lttng_ust_ctl_daemon_counter *counter,
 		const size_t *dimension_indexes,
 		int cpu, int64_t *value,
 		bool *overflow, bool *underflow);
-#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 int lttng_ust_ctl_counter_aggregate(struct lttng_ust_ctl_daemon_counter *counter,
 		const size_t *dimension_indexes,
 		int64_t *value,
@@ -937,13 +929,11 @@ int lttng_ust_ctl_counter_aggregate(struct lttng_ust_ctl_daemon_counter *counter
 int lttng_ust_ctl_counter_clear(struct lttng_ust_ctl_daemon_counter *counter,
 		const size_t *dimension_indexes);
 
-#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 int lttng_ust_ctl_counter_create_event(int sock,
 		struct lttng_ust_abi_counter_event *counter_event,
 		size_t counter_event_len,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data **counter_event_data);
-#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 void lttng_ust_ctl_sigbus_handle(void *addr);
 

@@ -407,9 +407,7 @@ static const char *cmd_name_mapping[] = {
 	/* Counter commands */
 	[ LTTNG_UST_ABI_COUNTER_CHANNEL ] = "Create Counter Channel",
 	[ LTTNG_UST_ABI_COUNTER_CPU ] = "Create Counter CPU",
-#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 	[ LTTNG_UST_ABI_COUNTER_EVENT ] = "Create Counter Event",
-#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 };
 
 static const char *str_timeout;
@@ -1529,7 +1527,6 @@ int handle_message(struct sock_info *sock_info,
 		untrack_fd(&args.counter_shm.shm_fd);
 		break;
 	}
-#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 	case LTTNG_UST_ABI_COUNTER_EVENT:
 	{
 		ret = copy_payload(payload, payload_size,
@@ -1547,7 +1544,6 @@ int handle_message(struct sock_info *sock_info,
 			ret = -ENOSYS;
 		break;
 	}
-#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 	case LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE:
 	{
 		ret = copy_payload(payload, payload_size,

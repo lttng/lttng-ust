@@ -4075,7 +4075,6 @@ int lttng_ust_ctl_reply_register_event(int sock,
 	return 0;
 }
 
-#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 /*
  * Returns 0 on success, negative UST or system error value on error.
  */
@@ -4213,7 +4212,6 @@ int lttng_ust_ctl_reply_register_key(int sock,
 		return len;
 	return 0;
 }
-#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 /*
  * Returns 0 on success, negative UST or system error value on error.
@@ -4632,7 +4630,6 @@ error:
 	return ret;
 }
 
-#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 int lttng_ust_ctl_create_counter_channel_data(struct lttng_ust_ctl_daemon_counter *counter,
 		struct lttng_ust_abi_object_data **_counter_channel_data)
 {
@@ -4657,7 +4654,6 @@ int lttng_ust_ctl_create_counter_channel_data(struct lttng_ust_ctl_daemon_counte
 error_alloc:
 	return ret;
 }
-#endif	 /* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 int lttng_ust_ctl_create_counter_cpu_data(struct lttng_ust_ctl_daemon_counter *counter, int cpu,
 		struct lttng_ust_abi_object_data **_counter_cpu_data)
@@ -4736,7 +4732,6 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 	return ret;
 }
 
-#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 /*
  * Protocol for LTTNG_UST_ABI_COUNTER_CHANNEL command:
  *
@@ -4788,7 +4783,6 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 	}
 	return ret;
 }
-#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 /*
  * Protocol for LTTNG_UST_ABI_COUNTER_CPU command:
@@ -4842,7 +4836,6 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 	return ret;
 }
 
-#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 int lttng_ust_ctl_counter_read(struct lttng_ust_ctl_daemon_counter *counter,
 		const size_t *dimension_indexes,
 		int cpu, int64_t *value,
@@ -4851,7 +4844,6 @@ int lttng_ust_ctl_counter_read(struct lttng_ust_ctl_daemon_counter *counter,
 	return counter->ops->priv->counter_read(counter->counter, dimension_indexes, cpu,
 			value, overflow, underflow);
 }
-#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 int lttng_ust_ctl_counter_aggregate(struct lttng_ust_ctl_daemon_counter *counter,
 		const size_t *dimension_indexes,
@@ -4868,7 +4860,6 @@ int lttng_ust_ctl_counter_clear(struct lttng_ust_ctl_daemon_counter *counter,
 	return counter->ops->priv->counter_clear(counter->counter, dimension_indexes);
 }
 
-#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 /*
  * Protocol for LTTNG_UST_COUNTER_EVENT command:
  *
@@ -4925,7 +4916,6 @@ int lttng_ust_ctl_counter_create_event(int sock,
 	*_counter_event_data = counter_event_data;
 	return 0;
 }
-#endif	 /* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 int lttng_ust_ctl_get_version(uint32_t *major, uint32_t *minor,
 		uint32_t *patchlevel) {
