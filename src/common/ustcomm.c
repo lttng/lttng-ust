@@ -1585,7 +1585,7 @@ int ustcomm_register_key(const struct ustcomm_sock *sock,
 
 	/* send key_string */
 	len = ustcomm_send_unix_sock(sock, key_string, msg.m.key_string_len);
-	if (len > 0 && len != dimension_indexes_len) {
+	if (len > 0 && len != msg.m.key_string_len) {
 		ret = -EIO;
 		goto error_dimension_indexes;
 	}
