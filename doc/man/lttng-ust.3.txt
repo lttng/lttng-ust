@@ -82,6 +82,8 @@ SYNOPSIS
                                               'len_type', 'len_expr')
 #define *lttng_ust_field_string*('field_name', 'expr')
 #define *lttng_ust_field_string_nowrite*('field_name', 'expr')
+#define *lttng_ust_field_unused*('expr')
+#define *lttng_ust_field_unused_nowrite*('expr')
 #define *lttng_ust_tracepoint*('prov_name', 't_name', ...)
 #define *lttng_ust_tracepoint_enabled*('prov_name', 't_name')
 
@@ -433,6 +435,14 @@ otherwise identical. Their primary purpose is to make some of the
 event context available to the event filters without having to commit
 the data to sub-buffers. See man:lttng-enable-event(1) to learn more
 about dynamic event filtering.
+
+The following macros do :not: record any field. Their sole purpose is to mark a
+tracepoint argument as deliberately unused so that the compiler doesn't warn
+about it when the argument isn't used by any other field:
+
+[verse]
+*lttng_ust_field_unused*('expr')
+*lttng_ust_field_unused_nowrite*('expr')
 
 See the <<example,EXAMPLE>> section below for a complete example.
 
