@@ -82,6 +82,15 @@ SYNOPSIS
                                               'len_type', 'len_expr')
 #define *lttng_ust_field_string*('field_name', 'expr')
 #define *lttng_ust_field_string_nowrite*('field_name', 'expr')
+#define *lttng_ust_field_fixed_length_blob*('field_name', 'expr', 'count',
+                                          'media_type')
+#define *lttng_ust_field_fixed_length_blob_nowrite*('field_name', 'expr',
+                                                  'count', 'media_type')
+#define *lttng_ust_field_variable_length_blob*('field_name', 'expr', 'len_type',
+                                             'len_expr', 'media_type')
+#define *lttng_ust_field_variable_length_blob_nowrite*('field_name', 'expr',
+                                                     'len_type', 'len_expr',
+                                                     'media_type')
 #define *lttng_ust_field_unused*('expr')
 #define *lttng_ust_field_unused_nowrite*('expr')
 #define *lttng_ust_tracepoint*('prov_name', 't_name', ...)
@@ -379,6 +388,28 @@ Dynamically-sized array, displayed as text; no need to be null-terminated:
 *lttng_ust_field_sequence_text_nowrite*(char, 'field_name', 'expr',
                                       'len_type', 'len_expr')
 
+Fixed-length BLOB: a fixed number of raw bytes tagged with a
+media type:
+
+[verse]
+*lttng_ust_field_fixed_length_blob*('field_name', 'expr', 'count', 'media_type')
+*lttng_ust_field_fixed_length_blob_nowrite*('field_name', 'expr', 'count',
+                                          'media_type')
+
+Variable-length BLOB: a dynamic number of raw bytes tagged with a
+media type:
+
+[verse]
+*lttng_ust_field_variable_length_blob*('field_name', 'expr', 'len_type',
+                                     'len_expr', 'media_type')
+*lttng_ust_field_variable_length_blob_nowrite*('field_name', 'expr', 'len_type',
+                                             'len_expr', 'media_type')
+
+A BLOB field records raw bytes, as pointed to by 'expr', without interpreting
+them. The number of bytes to record is 'count' (fixed-length version) or the
+evaluation of 'len_expr' (variable-length version). The 'media_type' parameter
+associates an IANA media type with the recorded data (see below).
+
 Enumeration. The enumeration field must be defined before using this
 macro with the `LTTNG_UST_TRACEPOINT_ENUM()` macro. See the
 <<tracepoint-enum,`LTTNG_UST_TRACEPOINT_ENUM()` usage>> section for more
@@ -393,7 +424,7 @@ information.
 The parameters are:
 
 'count'::
-    Number of elements in array/sequence. This must be known at
+    Number of elements/bytes in array/sequence/BLOB. This must be known at
     compile time.
 
 'enum_name'::
@@ -425,6 +456,11 @@ The parameters are:
 
 'len_type'::
     Unsigned integer C type of sequence length.
+
+'media_type'::
+    C expression of type `const char *` resulting in the
+    https://www.iana.org/assignments/media-types/[IANA media type]
+    of a BLOB field's data, for example `"image/png"`.
 
 'prov_name'::
     Tracepoint provider name. This must be the same as the tracepoint
