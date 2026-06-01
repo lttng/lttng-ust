@@ -27,6 +27,7 @@ SYNOPSIS
 #define *LTTNG_UST_TRACEPOINT_EVENT_INSTANCE*('cls_prov_name', 'cls_name',
                                             'inst_prov_name', 't_name', 'args')
 #define *LTTNG_UST_TRACEPOINT_LOGLEVEL*('prov_name', 't_name', 'level')
+#define *LTTNG_UST_TRACEPOINT_MODEL_EMF_URI*('prov_name', 't_name', 'uri')
 #define *lttng_ust_do_tracepoint*('prov_name', 't_name', ...)
 #define *lttng_ust_field_array*('int_type', 'field_name', 'expr', 'count')
 #define *lttng_ust_field_array_nowrite*('int_type', 'field_name', 'expr', 'count')
@@ -620,6 +621,32 @@ The available log level definitions are:
 include::log-levels.txt[]
 
 See the <<example,EXAMPLE>> section below for a complete example.
+
+
+[[tracepoint-model-emf-uri]]
+Associating an EMF model URI to a tracepoint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Optionally, you can assign an *Eclipse Modeling Framework* (EMF) *model URI* to
+a defined tracepoint. A trace reader may use this URI to locate a model
+describing the events the tracepoint produces.
+
+As with the `LTTNG_UST_TRACEPOINT_LOGLEVEL()` macro, you must use the
+`LTTNG_UST_TRACEPOINT_MODEL_EMF_URI()` macro after having
+used `LTTNG_UST_TRACEPOINT_EVENT()` or
+`LTTNG_UST_TRACEPOINT_EVENT_INSTANCE()` for a given tracepoint:
+
+------------------------------------------------------------------------
+LTTNG_UST_TRACEPOINT_MODEL_EMF_URI(
+    /* Tracepoint provider name */
+    my_provider,
+
+    /* Tracepoint/event name */
+    my_tracepoint,
+
+    /* Model URI */
+    "http://example.com/path/to/model"
+)
+------------------------------------------------------------------------
 
 
 [[tracepoint]]
