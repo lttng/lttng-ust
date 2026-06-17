@@ -1069,6 +1069,8 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
 		struct lttng_ust_event_session_common_private *event_session_priv =
 			caa_container_of(event->priv, struct lttng_ust_event_session_common_private, parent);
+		struct lttng_ust_event_counter_private *event_counter_priv =
+			caa_container_of(event->priv, struct lttng_ust_event_counter_private, parent.parent);
 		struct lttng_ust_session *session = event_enabler_session->chan->session;
 		struct ustcomm_sock usock = {
 			.fd = -1,
@@ -1087,7 +1089,7 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 			event_enabler_session->chan->priv->objd,
 			0,	/* target dimension */
 			NULL,
-			name,
+			event_counter_priv->key,
 			event_enabler_session->parent.user_token,
 			dimension_index);	/* Filled up to target dimension. */
 		if (ret)
