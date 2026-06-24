@@ -9,10 +9,10 @@ dnl Process this file with autoconf to produce a configure script.
 m4_define([ust_version_major], [2])
 m4_define([ust_version_minor], [16])
 m4_define([ust_version_patch], [0])
-m4_define([ust_version_dev_stage], [-pre])
+m4_define([ust_version_dev_stage], [-rc1])
 m4_define([ust_version], ust_version_major[.]ust_version_minor[.]ust_version_patch[]ust_version_dev_stage)
-m4_define([ust_version_name], [[Q-Beer]])
-m4_define([ust_version_description], [[An alcoholic drink made from yeast-fermented malt flavored with hops.]])
+m4_define([ust_version_name], [[Question de Perspective]])
+m4_define([ust_version_description], [[This release is named after Question de Perspective, a stout brewed by Ayawan in Val-Morin that the team adopted for its name. It is a thoroughly standard stout: dark and roasty, faithful to the expectations of the style, and remarkable mostly for how unremarkably it conforms to them. An std::stout, if you will. Whether that counts for or against it is, fittingly, a question of perspective.]])
 
 # Library version information of "liblttng-ust"
 # Following the numbering scheme proposed by libtool for the library version

@@ -1,6 +1,41 @@
-# SPDX-FileCopyrightText: 2011-2025 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+# SPDX-FileCopyrightText: 2011-2026 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
 #
 # SPDX-License-Identifier: CC-BY-SA-4.0
+
+2026-06-24 lttng-ust 2.16.0-rc1
+	* Reconcile Changelog with version 2.15.0-rc1
+	* Fix: shm unit test: Allow fd=0
+	* Flush stderr on abort
+	* Honor environment variables in probe provider error handling
+	* misc: Update .gitreview for stable-2.16
+	* Fix: counter: register map key under rendered key, not event name
+	* lttng-ust(3): document the BLOB field macros
+	* lttng-ust(3): document lttng_ust_field_unused()
+	* lttng-ust(3): document LTTNG_UST_TRACEPOINT_MODEL_EMF_URI()
+	* Make trace hit counters unconditional
+	* Fix: ustcomm: key-string send validated against wrong length
+	* fix: return negative error code on incorrect message size
+	* fix: check shmp() return value before dereference
+	* frontend: Change likely to unlikely
+	* fix: use decrementing counter in zero_file to avoid underflow warning
+	* fix: initialize LTTNG_UST_LFILE struct in ust_safe_vsnprintf
+	* fix: initialize sigevent struct before timer_create
+	* fix: close_range inefficiency with hash table fd-tracker
+	* fix: excessive memory usage of fd-tracker
+	* fix: check for NULL before dereference in ustctl
+	* Fix: stream instance id mismatch for populated packets in per-channel ringbuffers
+	* ustcomm: Differentiate socket shutdown behavior per socket type
+	* Convert deprecated '.reuse/dep5' to REUSE.toml files
+	* Add missing SPDX Copyright identifier
+	* Relicense documentation under CC-BY-SA-4.0
+	* doc/examples: add upper bound to minimal CMake version
+	* fix: warning with gcc 15 attribute nonstring
+	* Bytecode: Emit blobs as maps
+	* Tests: Blob fields
+	* ust-ctl: Implement blob field support
+	* Tracepoints: Implement blob field support
+	* ust-ctl: increase basic type padding value
+	* Set version to 2.16-pre
 
 2025-12-19 lttng-ust 2.15.0-rc1
 	* Add the 2.15 "Péché Mortel" beer description
