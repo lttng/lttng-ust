@@ -1361,13 +1361,15 @@ LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_init__, LTTNG_UST_TRACEPOINT_PROV
 	assert(!LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER));
 	reg_probe = lttng_ust_probe_register(&LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_desc___, LTTNG_UST_TRACEPOINT_PROVIDER));
 	if (!reg_probe) {
-		if (lttng_ust_tracepoint_logging_debug_enabled())
+		if (lttng_ust_tracepoint_logging_debug_enabled()) {
 			fprintf(stderr, "lttng-ust-tracepoint-probe [%ld]: Critical: Tracepoint probe '%s' rejected by tracer library. "
 				"(at addr=%p in %s() at " __FILE__ ":" lttng_ust_stringify(__LINE__) ")\n",
 				(long) getpid(),
 				lttng_ust_stringify(LTTNG_UST_TRACEPOINT_PROVIDER),
 				LTTNG_UST_TRACEPOINT_THIS_IP,
 				__func__);
+			fflush(stderr);
+		}
 		if (lttng_ust_tracepoint_logging_abort_on_critical_enabled())
 			abort();
 	}
