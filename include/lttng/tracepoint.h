@@ -431,13 +431,15 @@ bool lttng_ust_tracepoint_logging_abort_on_critical_enabled(void)
 static void
 lttng_ust_tracepoints_print_disabled_message(void)
 {
-	if (lttng_ust_tracepoint_logging_debug_enabled())
+	if (lttng_ust_tracepoint_logging_debug_enabled()) {
 		fprintf(stderr, "lttng-ust-tracepoint [%ld]: Critical: dlopen() failed to find '%s', tracepoints in this binary won't be registered. "
 			"(at addr=%p in %s() at " __FILE__ ":" lttng_ust_stringify(__LINE__) ")\n",
 			(long) getpid(),
 			LTTNG_UST_TRACEPOINT_LIB_SONAME,
 			LTTNG_UST_TRACEPOINT_THIS_IP,
 			__func__);
+		fflush(stderr);
+	}
 	if (lttng_ust_tracepoint_logging_abort_on_critical_enabled())
 		abort();
 }
@@ -500,6 +502,7 @@ lttng_ust__tracepoints__destroy(void)
 	ret = dlclose(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle);
 	if (ret) {
 		fprintf(stderr, "Error (%d) in dlclose\n", ret);
+		fflush(stderr);
 		abort();
 	}
 	memset(lttng_ust_tracepoint_dlopen_ptr, 0, sizeof(*lttng_ust_tracepoint_dlopen_ptr));
@@ -668,6 +671,7 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 		ret = dlclose(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle);
 		if (ret) {
 			fprintf(stderr, "Error (%d) in dlclose\n", ret);
+			fflush(stderr);
 			abort();
 		}
 		memset(lttng_ust_tracepoint_dlopen_ptr, 0, sizeof(*lttng_ust_tracepoint_dlopen_ptr));
