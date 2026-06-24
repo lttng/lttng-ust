@@ -31,7 +31,7 @@ int main(void)
 
 	/* Open a zero byte shm fd */
 	shmfd = shm_open(SHM_PATH, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-	ok(shmfd > 0, "Open a POSIX shm fd");
+	ok(shmfd >= 0, "Open a POSIX shm fd");
 
 	/* Create a dummy shm object table to test the allocation function */
 	table = shm_object_table_create(1, false);
