@@ -109,7 +109,7 @@
  * If the condition is true, the compiler will generate a build error.
  */
 #define lttng_ust_build_bug_on(condition)			\
-	((void) sizeof(char[-!!(condition)]))
+	((void) sizeof(char[1 - 2 * !!(condition)]))
 
 
 /**
