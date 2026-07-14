@@ -1308,12 +1308,25 @@ static
 bool lttng_event_session_enabler_match_event_session(struct lttng_event_enabler_session_common *event_enabler_session,
 		struct lttng_ust_event_session_common_private *event_session_priv)
 {
-	if (lttng_desc_match_enabler(event_session_priv->parent.desc, &event_enabler_session->parent)
-			&& event_session_priv->chan == event_enabler_session->chan
-			&& match_event_session_token(event_session_priv, event_enabler_session->parent.user_token))
-		return true;
-	else
+	const struct lttng_ust_event_desc *desc = event_session_priv->parent.desc;
+	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
+	int ret;
+
+	if (!lttng_desc_match_enabler(desc, &event_enabler_session->parent))
 		return false;
+	if (event_session_priv->chan != event_enabler_session->chan)
+		return false;
+	if (!match_event_session_token(event_session_priv, event_enabler_session->parent.user_token))
+		return false;
+
+	ret = format_event_key(&event_enabler_session->parent, key_string,
+			desc->probe_desc->provider_name, desc->event_name);
+	if (ret) {
+		DBG("Error (%d) formatting key of enabler for event '%s:%s': the enabler matches no event",
+			ret, desc->probe_desc->provider_name, desc->event_name);
+		return false;
+	}
+	return match_event_key(event_session_priv->parent.pub, key_string);
 }
 
 static
