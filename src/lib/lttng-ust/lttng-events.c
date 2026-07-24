@@ -106,7 +106,9 @@ void lttng_event_enabler_unsync(struct lttng_event_enabler_common *event_enabler
 	{
 		struct lttng_event_enabler_session_common *event_enabler_session =
 			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
-		cds_list_move(&event_enabler->node,
+		/* Move to the tail so enablers synchronize in creation order. */
+		cds_list_del(&event_enabler->node);
+		cds_list_add_tail(&event_enabler->node,
 			      &event_enabler_session->chan->session->priv->unsync_enablers_head);
 		break;
 	}
@@ -1751,7 +1753,7 @@ struct lttng_event_recorder_enabler *lttng_event_recorder_enabler_create(
 	event_enabler->parent.parent.enabled = 0;
 	event_enabler->parent.parent.user_token = event_param->token;
 	event_enabler->parent.chan = chan->parent;
-	cds_list_add(&event_enabler->parent.parent.node, &event_enabler->chan->parent->session->priv->unsync_enablers_head);
+	cds_list_add_tail(&event_enabler->parent.parent.node, &event_enabler->chan->parent->session->priv->unsync_enablers_head);
 	lttng_session_lazy_sync_event_enablers(event_enabler->chan->parent->session);
 
 	return event_enabler;
@@ -1790,7 +1792,11 @@ struct lttng_event_counter_enabler *lttng_event_counter_enabler_create(
 	event_enabler->parent.parent.enabled = 0;
 	event_enabler->parent.parent.user_token = counter_event->event.token;
 	event_enabler->parent.chan = chan->parent;
-	cds_list_add(&event_enabler->parent.parent.node, &event_enabler->chan->parent->session->priv->unsync_enablers_head);
+	/*
+	 * Append so enablers synchronize in creation order; see
+	 * lttng_event_enabler_unsync().
+	 */
+	cds_list_add_tail(&event_enabler->parent.parent.node, &event_enabler->chan->parent->session->priv->unsync_enablers_head);
 	lttng_session_lazy_sync_event_enablers(event_enabler->chan->parent->session);
 
 	return event_enabler;
@@ -2193,7 +2199,11 @@ void lttng_sync_event_list(struct cds_list_head *sync_event_enabler_list,
 		CDS_INIT_LIST_HEAD(unsync_event_enabler_list);
 		cds_list_for_each_entry(event_enabler, &iter_list, node)
 			lttng_event_enabler_ref_events(event_enabler);
-		cds_list_splice(&iter_list, sync_event_enabler_list);
+		/*
+		 * Splice after the tail so the synchronized list stays
+		 * in creation order across rounds.
+		 */
+		cds_list_splice(&iter_list, sync_event_enabler_list->prev);
 	} while (!cds_list_empty(unsync_event_enabler_list));
 
 	/*
