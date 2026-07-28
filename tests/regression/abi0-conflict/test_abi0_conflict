@@ -50,6 +50,22 @@ fi
 # Force abort on CRIT() to detect ABI conflicts
 export LTTNG_UST_ABORT_ON_CRITICAL=1
 
+function set_coredump_limit
+{
+    # Use the soft limit so that it can be raised again afterwards
+    ulimit -S -c "${1}"
+}
+
+function enable_coredumps
+{
+    set_coredump_limit unlimited
+}
+
+function disable_coredumps
+{
+    set_coredump_limit 0
+}
+
 plan_tests $NUM_TESTS
 
 ###
@@ -66,18 +82,20 @@ ok $? "LD_PRELOAD: no-ust app works"
 LD_PRELOAD="${LIBFAKEUST0}" "${CURDIR}/app_noust" >"$STD_OUTPUT" 2>"$STD_ERROR"
 ok $? "LD_PRELOAD: no-ust app with abi0 preload succeeds"
 
+disable_coredumps
 LD_PRELOAD="${LIBFAKEUST0}:${LIBUST1}" "${CURDIR}/app_noust" >"$STD_OUTPUT" 2>"$STD_ERROR"
 isnt $? 0 "LD_PRELOAD: no-ust app with abi0 and abi1 preload fails"
 
 LD_PRELOAD="${LIBUST1}:${LIBFAKEUST0}" "${CURDIR}/app_noust" >"$STD_OUTPUT" 2>"$STD_ERROR"
 isnt $? 0 "LD_PRELOAD: no-ust app with abi1 and abi0 preload fails"
-
+enable_coredumps
 
 ## App linked on liblttng-ust.so.1
 
 "${CURDIR}/app_ust" >"$STD_OUTPUT" 2>"$STD_ERROR"
 ok $? "LD_PRELOAD: ust app works"
 
+disable_coredumps
 LD_PRELOAD="${LIBFAKEUST0}" "${CURDIR}/app_ust" >"$STD_OUTPUT" 2>"$STD_ERROR"
 isnt $? 0 "LD_PRELOAD: ust app with abi0 preload fails"
 
@@ -86,7 +104,7 @@ isnt $? 0 "LD_PRELOAD: ust app with abi0 and abi1 preload fails"
 
 LD_PRELOAD="${LIBUST1}:${LIBFAKEUST0}" "${CURDIR}/app_ust" >"$STD_OUTPUT" 2>"$STD_ERROR"
 isnt $? 0 "LD_PRELOAD: ust app with abi1 and abi0 preload fails"
-
+enable_coredumps
 
 ###
 ## dlopen tests
@@ -102,6 +120,7 @@ ok $? "dlopen: no-ust app works"
 LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi1_abi1 >"$STD_OUTPUT" 2>"$STD_ERROR"
 ok $? "dlopen: no-ust app with abi1 and abi1 succeeds"
 
+disable_coredumps
 LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi0_abi1 >"$STD_OUTPUT" 2>"$STD_ERROR"
 isnt $? 0 "dlopen: no-ust app with abi0 and abi1 fails"
 
@@ -109,6 +128,7 @@ if [ "$UST_TESTS_LD_SYMBOLIC_FUNC" = "" ]; then
     LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi1_abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
     isnt $? 0 "dlopen: no-ust app with abi1 and abi0 fails"
 fi
+enable_coredumps
 
 ## App linked on liblttng-ust.so.1
 
@@ -116,6 +136,7 @@ LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi
 ok $? "dlopen: ust app works"
 
 if [ "$UST_TESTS_LD_SYMBOLIC_FUNC" = "" ]; then
+    disable_coredumps
     LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
     isnt $? 0 "dlopen: ust app with abi0 fails"
 
@@ -124,6 +145,7 @@ if [ "$UST_TESTS_LD_SYMBOLIC_FUNC" = "" ]; then
 
     LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi1_abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
     isnt $? 0 "dlopen: ust app with abi1 and abi0 fails"
+    enable_coredumps
 fi
 
 
@@ -141,6 +163,7 @@ ok $? "indirect: no-ust app with abi0 succeeds"
 "${CURDIR}/app_noust_indirect_abi1" >"$STD_OUTPUT" 2>"$STD_ERROR"
 ok $? "indirect: no-ust app with abi1 succeeds"
 
+disable_coredumps
 "${CURDIR}/app_noust_indirect_abi0_abi1" >"$STD_OUTPUT" 2>"$STD_ERROR"
 isnt $? 0 "indirect: no-ust app with abi0 and abi1 fails"
 
@@ -148,9 +171,12 @@ isnt $? 0 "indirect: no-ust app with abi0 and abi1 fails"
 
 "${CURDIR}/app_ust_indirect_abi0" >"$STD_OUTPUT" 2>"$STD_ERROR"
 isnt $? 0 "indirect: ust app with abi0 fails"
+enable_coredumps
 
 "${CURDIR}/app_ust_indirect_abi1" >"$STD_OUTPUT" 2>"$STD_ERROR"
 ok $? "indirect: ust app with abi1 succeeds"
 
+disable_coredumps
 "${CURDIR}/app_ust_indirect_abi0_abi1" >"$STD_OUTPUT" 2>"$STD_ERROR"
 isnt $? 0 "indirect: ust app with abi0 and abi1 fails"
+enable_coredumps
