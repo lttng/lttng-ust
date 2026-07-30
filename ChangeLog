@@ -2,6 +2,14 @@
 #
 # SPDX-License-Identifier: CC-BY-SA-4.0
 
+2026-07-30 lttng-ust 2.16.0-rc2
+	* tests: Disable coredumps for expected ABI failures
+	* Fix: session enablers synchronize in reverse creation order
+	* Fix: counter: enabler filters apply to the counters of other keys
+	* Fix: lttng_ust_build_bug_on undefined behavior in C++ builds
+	* Fix: ringbuffer: retry on wrap-around contention for per-channel buffers
+	* Fix: Introduce concurrent subbuffer-ownership retry loop
+
 2026-06-24 lttng-ust 2.16.0-rc1
 	* Reconcile Changelog with version 2.15.0-rc1
 	* Fix: shm unit test: Allow fd=0
