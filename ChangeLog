@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: CC-BY-SA-4.0
 
+2026-08-27 lttng-ust 2.16.0
+	* (no change)
+
 2026-07-30 lttng-ust 2.16.0-rc2
 	* tests: Disable coredumps for expected ABI failures
 	* Fix: session enablers synchronize in reverse creation order
