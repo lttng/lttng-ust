@@ -2,6 +2,14 @@
 #
 # SPDX-License-Identifier: CC-BY-4.0
 
+2026-09-08 lttng-ust 2.15.2
+	* tests: Disable coredumps for expected ABI failures
+	* Fix: lttng_ust_build_bug_on undefined behavior in C++ builds
+	* Fix: ringbuffer: retry on wrap-around contention for per-channel buffers
+	* Fix: Introduce concurrent subbuffer-ownership retry loop
+	* lttng-ust(3): document lttng_ust_field_unused()
+	* lttng-ust(3): document LTTNG_UST_TRACEPOINT_MODEL_EMF_URI()
+
 2026-05-22 lttng-ust 2.15.1
 	* fix: return negative error code on incorrect message size
 	* fix: check shmp() return value before dereference
