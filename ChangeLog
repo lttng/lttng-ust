@@ -2,6 +2,12 @@
 #
 # SPDX-License-Identifier: CC-BY-4.0
 
+2026-09-08 lttng-ust 2.14.3
+	* tests: Disable coredumps for expected ABI failures
+	* Fix: lttng_ust_build_bug_on undefined behavior in C++ builds
+	* lttng-ust(3): document lttng_ust_field_unused()
+	* lttng-ust(3): document LTTNG_UST_TRACEPOINT_MODEL_EMF_URI()
+
 2026-05-22 lttng-ust 2.14.2
 	* Fix: stream instance id mismatch for populated packets in per-channel ringbuffers
 	* fix: check shmp() return value before dereference
