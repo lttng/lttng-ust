@@ -39,7 +39,7 @@ unsigned int lttng_ust_fls_u32(uint32_t x)
 static inline
 unsigned int lttng_ust_fls_u64(uint64_t x)
 {
-	long r;
+	uint64_t r;
 
 	__asm__ ("bsrq %1,%0\n\t"
 	    "jnz 1f\n\t"
