@@ -84,6 +84,15 @@
 static int initialized;
 
 /*
+ * The listener thread allocates a LTTNG_UST_COMM_MAX_PAYLOAD_SIZE (128 KiB)
+ * payload buffer on its stack. Ensure a minimum stack size of 512 KiB to leave
+ * room for the buffer, the listener call chain, and libc/pthread stack usage
+ * even when the application configures a smaller default stack size. Preserve
+ * larger default stack sizes.
+ */
+#define LTTNG_UST_LISTENER_MIN_STACK_SIZE (512 * 1024)
+
+/*
  * The ust_lock/ust_unlock lock is used as a communication thread mutex.
  * Held when handling a command, also held by fork() to deal with
  * removal of threads, and by exit path.
@@ -2517,6 +2526,7 @@ void lttng_ust_ctor(void)
 	struct timespec constructor_timeout;
 	sigset_t sig_all_blocked, orig_parent_mask;
 	pthread_attr_t thread_attr;
+	size_t stack_size;
 	int timeout_mode;
 	int ret;
 	void *handle;
@@ -2637,6 +2647,16 @@ void lttng_ust_ctor(void)
 	ret = pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
 	if (ret) {
 		ERR("pthread_attr_setdetachstate: %s", strerror(ret));
+	}
+	ret = pthread_attr_getstacksize(&thread_attr, &stack_size);
+	if (ret) {
+		ERR("pthread_attr_getstacksize: %s", strerror(ret));
+	} else if (stack_size < LTTNG_UST_LISTENER_MIN_STACK_SIZE) {
+		ret = pthread_attr_setstacksize(&thread_attr,
+				LTTNG_UST_LISTENER_MIN_STACK_SIZE);
+		if (ret) {
+			ERR("pthread_attr_setstacksize: %s", strerror(ret));
+		}
 	}
 
 	if (ust_app.allowed) {
