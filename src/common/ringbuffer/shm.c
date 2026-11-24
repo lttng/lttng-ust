@@ -82,6 +82,13 @@ struct shm_object_table *shm_object_table_create(size_t max_nb_obj, bool populat
 }
 
 static
+void disable_readahead(void *memory_map, size_t memory_map_size)
+{
+	if (madvise(memory_map, memory_map_size, MADV_RANDOM))
+		PERROR("Failed to disable readahead on mapping");
+}
+
+static
 struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 					   size_t memory_map_size,
 					   int stream_fd,
@@ -160,6 +167,7 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 		PERROR("mmap");
 		goto error_mmap;
 	}
+	disable_readahead(memory_map, memory_map_size);
 	obj->type = SHM_OBJECT_SHM;
 	obj->memory_map = memory_map;
 	obj->memory_map_size = memory_map_size;
@@ -351,6 +359,7 @@ struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
 		PERROR("mmap");
 		goto error_mmap;
 	}
+	disable_readahead(memory_map, memory_map_size);
 	obj->type = SHM_OBJECT_SHM;
 	obj->memory_map = memory_map;
 	obj->memory_map_size = memory_map_size;
